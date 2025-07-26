@@ -65,16 +65,17 @@
 
         <!-- Results Table Container -->
         <div id="tableContainer" class="bg-white rounded-xl shadow-md overflow-hidden">
-             <table class="min-w-full divide-y divide-gray-200">
+             <table class="min-w-full">
                 <thead class="bg-gray-50">
                     <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lane</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seed Time</th>
                     </tr>
                 </thead>
-                <tbody id="resultsBody" class="bg-white divide-y divide-gray-200">
+                <tbody id="resultsBody" class="bg-white">
                     <!-- Participant rows will be inserted here by JavaScript -->
                 </tbody>
             </table>
@@ -128,7 +129,7 @@
             if (!parts) return Infinity;
             const minutes = parseInt(parts[1], 10) * 60;
             const seconds = parseInt(parts[2], 10);
-            const milliseconds = parts[3] ? parseInt(parts[3], 10) / 100 : 0;
+            const milliseconds = parts[3] ? parseInt(parts[3].padEnd(2, '0'), 10) / 100 : 0;
             return minutes + seconds + milliseconds;
         }
 
@@ -168,9 +169,11 @@
                 tableContainer.classList.remove('hidden');
             }
 
-            filteredParticipants.forEach(p => {
+            filteredParticipants.forEach((p, index) => {
+                const laneNumber = (index % 4) + 1;
                 const row = `
                     <tr class="hover:bg-gray-50 transition-colors duration-200">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">${laneNumber}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${p.name}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.team}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.age}</td>
@@ -178,6 +181,16 @@
                     </tr>
                 `;
                 resultsBody.innerHTML += row;
+
+                // Add a visual breakline after each group of 4, but not for the last item
+                if (laneNumber === 4 && index < filteredParticipants.length - 1) {
+                    const breakRow = `
+                        <tr class="bg-blue-100">
+                            <td colspan="5" class="px-6 py-1 text-center text-xs font-semibold text-blue-800 uppercase">Next Heat</td>
+                        </tr>
+                    `;
+                    resultsBody.innerHTML += breakRow;
+                }
             });
         }
 
