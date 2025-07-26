@@ -10,6 +10,13 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+        /* Style for the sortable table headers */
+        .sortable-header {
+            cursor: pointer;
+        }
+        .sortable-header:hover {
+            background-color: #f0f0f0;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -22,8 +29,8 @@
 
         <!-- Filter Controls -->
         <div class="bg-white p-6 rounded-xl shadow-md mb-8">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-                <h2 class="text-xl font-semibold text-gray-700 md:col-span-3">Filter Results</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                <h2 class="text-xl font-semibold text-gray-700 md:col-span-4">Filter & Sort Results</h2>
                 
                 <div>
                     <label for="teamFilter" class="block text-sm font-medium text-gray-700">Filter by Team</label>
@@ -39,6 +46,15 @@
                         <span class="text-gray-500">-</span>
                         <input type="number" id="ageMaxFilter" placeholder="Max" class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                     </div>
+                </div>
+                
+                <div>
+                    <label for="timeSortFilter" class="block text-sm font-medium text-gray-700">Sort by Time</label>
+                    <select id="timeSortFilter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                        <option value="none">Default (Name)</option>
+                        <option value="asc">Ascending (Fastest First)</option>
+                        <option value="desc">Descending (Slowest First)</option>
+                    </select>
                 </div>
 
                 <div>
@@ -92,30 +108,54 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-        setLogLevel('error'); // Set to 'debug' for more logs, 'error' for less
+        setLogLevel('error');
 
-        let allParticipants = []; // To store the original list of participants
+        let allParticipants = [];
 
         const teamFilter = document.getElementById('teamFilter');
         const ageMinFilter = document.getElementById('ageMinFilter');
         const ageMaxFilter = document.getElementById('ageMaxFilter');
+        const timeSortFilter = document.getElementById('timeSortFilter');
         const tableContainer = document.getElementById('tableContainer');
         const resultsBody = document.getElementById('resultsBody');
         const statusMessage = document.getElementById('statusMessage');
         const resetFiltersBtn = document.getElementById('resetFilters');
+
+        // Helper function to convert MM:SS.ms string to a numerical value for sorting
+        function parseTime(timeString) {
+            if (!timeString || typeof timeString !== 'string') return Infinity;
+            const parts = timeString.match(/(\d+):(\d+)\.?(\d+)?/);
+            if (!parts) return Infinity;
+            const minutes = parseInt(parts[1], 10) * 60;
+            const seconds = parseInt(parts[2], 10);
+            const milliseconds = parts[3] ? parseInt(parts[3], 10) / 100 : 0;
+            return minutes + seconds + milliseconds;
+        }
 
         // Function to render the participant rows in the table
         function renderParticipants() {
             const selectedTeam = teamFilter.value;
             const minAge = ageMinFilter.value ? parseInt(ageMinFilter.value, 10) : null;
             const maxAge = ageMaxFilter.value ? parseInt(ageMaxFilter.value, 10) : null;
+            const sortOrder = timeSortFilter.value;
 
-            // Filter the participants based on the selected criteria
-            const filteredParticipants = allParticipants.filter(p => {
+            // Filter the participants
+            let filteredParticipants = allParticipants.filter(p => {
                 const teamMatch = selectedTeam === 'all' || p.team === selectedTeam;
                 const ageMatch = (!minAge || p.age >= minAge) && (!maxAge || p.age <= maxAge);
                 return teamMatch && ageMatch;
             });
+
+            // Sort the filtered participants
+            if (sortOrder === 'asc') {
+                filteredParticipants.sort((a, b) => parseTime(a.seedTime) - parseTime(b.seedTime));
+            } else if (sortOrder === 'desc') {
+                filteredParticipants.sort((a, b) => parseTime(b.seedTime) - parseTime(a.seedTime));
+            } else {
+                // Default sort by name
+                 filteredParticipants.sort((a, b) => a.name.localeCompare(b.name));
+            }
+
 
             resultsBody.innerHTML = ''; // Clear previous results
 
@@ -143,12 +183,12 @@
 
         // Function to populate the team filter dropdown
         function populateTeamFilter(participants) {
-            const teams = [...new Set(participants.map(p => p.team))]; // Get unique team names
+            const teams = [...new Set(participants.map(p => p.team))];
             teams.sort();
             
             const currentSelection = teamFilter.value;
             
-            teamFilter.innerHTML = '<option value="all">All Teams</option>'; // Reset
+            teamFilter.innerHTML = '<option value="all">All Teams</option>';
             teams.forEach(team => {
                 const option = document.createElement('option');
                 option.value = team;
@@ -161,7 +201,7 @@
             }
         }
 
-        // Function to handle authentication and data fetching
+        // Main function to handle authentication and data fetching
         async function main() {
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -178,10 +218,8 @@
                         allParticipants.push({ id: doc.id, ...doc.data() });
                     });
                     
-                    allParticipants.sort((a, b) => a.name.localeCompare(b.name));
-
                     populateTeamFilter(allParticipants);
-                    renderParticipants(); // Initial render
+                    renderParticipants();
                 }, (error) => {
                     console.error("Error with snapshot listener: ", error);
                     statusMessage.innerHTML = `<p class="text-red-500">Error fetching real-time data: ${error.message}.</p>`;
@@ -197,10 +235,13 @@
         teamFilter.addEventListener('change', renderParticipants);
         ageMinFilter.addEventListener('input', renderParticipants);
         ageMaxFilter.addEventListener('input', renderParticipants);
+        timeSortFilter.addEventListener('change', renderParticipants);
+
         resetFiltersBtn.addEventListener('click', () => {
             teamFilter.value = 'all';
             ageMinFilter.value = '';
             ageMaxFilter.value = '';
+            timeSortFilter.value = 'none';
             renderParticipants();
         });
 
