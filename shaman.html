@@ -47,9 +47,21 @@
             </div>
         </div>
 
-        <!-- Results Container -->
-        <div id="resultsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <!-- Participant cards will be inserted here by JavaScript -->
+        <!-- Results Table Container -->
+        <div id="tableContainer" class="bg-white rounded-xl shadow-md overflow-hidden">
+             <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seed Time</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody" class="bg-white divide-y divide-gray-200">
+                    <!-- Participant rows will be inserted here by JavaScript -->
+                </tbody>
+            </table>
         </div>
         
         <!-- Loading / No Results Message -->
@@ -87,11 +99,12 @@
         const teamFilter = document.getElementById('teamFilter');
         const ageMinFilter = document.getElementById('ageMinFilter');
         const ageMaxFilter = document.getElementById('ageMaxFilter');
-        const resultsContainer = document.getElementById('resultsContainer');
+        const tableContainer = document.getElementById('tableContainer');
+        const resultsBody = document.getElementById('resultsBody');
         const statusMessage = document.getElementById('statusMessage');
         const resetFiltersBtn = document.getElementById('resetFilters');
 
-        // Function to render the participant cards
+        // Function to render the participant rows in the table
         function renderParticipants() {
             const selectedTeam = teamFilter.value;
             const minAge = ageMinFilter.value ? parseInt(ageMinFilter.value, 10) : null;
@@ -100,35 +113,31 @@
             // Filter the participants based on the selected criteria
             const filteredParticipants = allParticipants.filter(p => {
                 const teamMatch = selectedTeam === 'all' || p.team === selectedTeam;
-                
                 const ageMatch = (!minAge || p.age >= minAge) && (!maxAge || p.age <= maxAge);
-
                 return teamMatch && ageMatch;
             });
 
-            resultsContainer.innerHTML = ''; // Clear previous results
+            resultsBody.innerHTML = ''; // Clear previous results
 
             if (filteredParticipants.length === 0) {
                 statusMessage.innerHTML = '<p>No participants match the current filters.</p>';
                 statusMessage.classList.remove('hidden');
+                tableContainer.classList.add('hidden');
             } else {
                 statusMessage.classList.add('hidden');
+                tableContainer.classList.remove('hidden');
             }
 
             filteredParticipants.forEach(p => {
-                const card = `
-                    <div class="bg-white rounded-xl shadow-md overflow-hidden transform hover:scale-105 transition-transform duration-300">
-                        <div class="p-6">
-                            <div class="uppercase tracking-wide text-sm text-blue-600 font-bold">${p.team}</div>
-                            <h3 class="block mt-1 text-lg leading-tight font-medium text-black">${p.name}</h3>
-                            <div class="mt-4 flex justify-between items-center text-gray-600">
-                                <span>Age: <span class="font-semibold">${p.age}</span></span>
-                                <span>Seed: <span class="font-semibold">${p.seedTime}</span></span>
-                            </div>
-                        </div>
-                    </div>
+                const row = `
+                    <tr class="hover:bg-gray-50 transition-colors duration-200">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${p.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.team}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.age}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">${p.seedTime}</td>
+                    </tr>
                 `;
-                resultsContainer.innerHTML += card;
+                resultsBody.innerHTML += row;
             });
         }
 
@@ -152,7 +161,7 @@
             }
         }
 
-        // Function to handle authentication
+        // Function to handle authentication and data fetching
         async function main() {
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -172,7 +181,10 @@
                     allParticipants.sort((a, b) => a.name.localeCompare(b.name));
 
                     populateTeamFilter(allParticipants);
-                    renderParticipants();
+                    renderParticipants(); // Initial render
+                }, (error) => {
+                    console.error("Error with snapshot listener: ", error);
+                    statusMessage.innerHTML = `<p class="text-red-500">Error fetching real-time data: ${error.message}.</p>`;
                 });
 
             } catch (error) {
