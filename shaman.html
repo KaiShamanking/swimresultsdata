@@ -162,16 +162,20 @@
             let filteredParticipants = allParticipants.filter(p => {
                 const teamMatch = selectedTeam === 'all' || p.team === selectedTeam;
                 const genderMatch = selectedGender === 'all' || p.gender === selectedGender;
-                const eventMatch = selectedEvent === 'all' || (Array.isArray(p.events) && p.events.includes(selectedEvent));
+                // Check if the participant has the selected event
+                const eventMatch = selectedEvent === 'all' || (p.events && typeof p.events === 'object' && p.events.hasOwnProperty(selectedEvent));
                 const ageMatch = (!minAge || p.age >= minAge) && (!maxAge || p.age <= maxAge);
                 return teamMatch && genderMatch && eventMatch && ageMatch;
             });
 
             // Sort the filtered participants
-            if (sortOrder === 'asc') {
-                filteredParticipants.sort((a, b) => parseTime(a.seedTime) - parseTime(b.seedTime));
-            } else if (sortOrder === 'desc') {
-                filteredParticipants.sort((a, b) => parseTime(b.seedTime) - parseTime(a.seedTime));
+            // Time sorting is only active if a specific event is selected
+            if (sortOrder !== 'none' && selectedEvent !== 'all') {
+                if (sortOrder === 'asc') {
+                    filteredParticipants.sort((a, b) => parseTime(a.events[selectedEvent]) - parseTime(b.events[selectedEvent]));
+                } else if (sortOrder === 'desc') {
+                    filteredParticipants.sort((a, b) => parseTime(b.events[selectedEvent]) - parseTime(a.events[selectedEvent]));
+                }
             } else {
                  filteredParticipants.sort((a, b) => a.name.localeCompare(b.name));
             }
@@ -190,13 +194,16 @@
 
             filteredParticipants.forEach((p, index) => {
                 const laneNumber = (index % 4) + 1;
+                // Get the seed time for the selected event, or show '---' if no event is selected
+                const seedTime = (selectedEvent !== 'all' && p.events && p.events[selectedEvent]) ? p.events[selectedEvent] : '---';
+
                 const row = `
                     <tr class="hover:bg-gray-50 transition-colors duration-200">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">${laneNumber}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${p.name}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.team}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.age}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">${p.seedTime}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">${seedTime}</td>
                     </tr>
                 `;
                 resultsBody.innerHTML += row;
@@ -244,8 +251,9 @@
                     });
                     
                     const teams = [...new Set(allParticipants.map(p => p.team))].sort();
-                    const genders = [...new Set(allParticipants.map(p => p.gender))].sort();
-                    const events = [...new Set(allParticipants.flatMap(p => p.events || []))].sort();
+                    const genders = [...new Set(allParticipants.map(p => p.gender).filter(g => g))].sort();
+                    // Get all event names from the events object for each participant
+                    const events = [...new Set(allParticipants.flatMap(p => (p.events && typeof p.events === 'object') ? Object.keys(p.events) : []))].sort();
 
                     populateSelectFilter(teamFilter, teams, 'All Teams');
                     populateSelectFilter(genderFilter, genders, 'All Genders');
