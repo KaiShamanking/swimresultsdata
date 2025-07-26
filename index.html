@@ -19,7 +19,7 @@
   <div class="w-full max-w-4xl p-8 space-y-6 bg-white rounded-xl shadow-lg">
     <div class="text-center">
       <h1 class="text-3xl font-bold text-gray-800">Participant Data Entry</h1>
-      <p class="mt-2 text-gray-600">Add multiple swimmers, then submit all to Firebase.</p>
+      <p class="mt-2 text-gray-600">Add multiple swimmers, select events (max 5), then submit all to Firebase.</p>
     </div>
 
     <!-- Form -->
@@ -56,6 +56,45 @@
         </div>
       </div>
 
+      <!-- Events -->
+      <div>
+        <span class="text-sm font-medium text-gray-700">Select Events (max 5)</span>
+        <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          <label class="inline-flex items-center">
+            <input type="checkbox" name="events" value="50m Butterfly" class="event-checkbox">
+            <span class="ml-2">50m Butterfly</span>
+          </label>
+          <label class="inline-flex items-center">
+            <input type="checkbox" name="events" value="50m Freestyle" class="event-checkbox">
+            <span class="ml-2">50m Freestyle</span>
+          </label>
+          <label class="inline-flex items-center">
+            <input type="checkbox" name="events" value="50m Backstroke" class="event-checkbox">
+            <span class="ml-2">50m Backstroke</span>
+          </label>
+          <label class="inline-flex items-center">
+            <input type="checkbox" name="events" value="50m Breaststroke" class="event-checkbox">
+            <span class="ml-2">50m Breaststroke</span>
+          </label>
+          <label class="inline-flex items-center">
+            <input type="checkbox" name="events" value="100m Butterfly" class="event-checkbox">
+            <span class="ml-2">100m Butterfly</span>
+          </label>
+          <label class="inline-flex items-center">
+            <input type="checkbox" name="events" value="100m Freestyle" class="event-checkbox">
+            <span class="ml-2">100m Freestyle</span>
+          </label>
+          <label class="inline-flex items-center">
+            <input type="checkbox" name="events" value="100m Backstroke" class="event-checkbox">
+            <span class="ml-2">100m Backstroke</span>
+          </label>
+          <label class="inline-flex items-center">
+            <input type="checkbox" name="events" value="100m Breaststroke" class="event-checkbox">
+            <span class="ml-2">100m Breaststroke</span>
+          </label>
+        </div>
+      </div>
+
       <div class="flex gap-4">
         <button type="button" id="addParticipant" class="btn-primary w-1/2 flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
           Add Swimmer
@@ -79,12 +118,11 @@
               <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Gender</th>
               <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Age</th>
               <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Seed Time</th>
+              <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Events</th>
               <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Actions</th>
             </tr>
           </thead>
-          <tbody id="participantsTableBody" class="divide-y divide-gray-200">
-            <!-- rows added dynamically -->
-          </tbody>
+          <tbody id="participantsTableBody" class="divide-y divide-gray-200"></tbody>
         </table>
       </div>
     </div>
@@ -92,7 +130,6 @@
     <div id="statusMessage" class="mt-6 text-center text-sm"></div>
   </div>
 
-  <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -110,18 +147,24 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
-
-    async function authenticate() {
-      if (!auth.currentUser) await signInAnonymously(auth);
-    }
-    window.onload = authenticate;
+    window.onload = () => signInAnonymously(auth);
 
     const participantsList = [];
-    const form = document.getElementById('participantForm');
     const addBtn = document.getElementById('addParticipant');
     const submitAllBtn = document.getElementById('submitAll');
     const statusMessage = document.getElementById('statusMessage');
     const tableBody = document.getElementById('participantsTableBody');
+
+    // Limit to 5 event checkboxes
+    document.querySelectorAll('.event-checkbox').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const checked = document.querySelectorAll('.event-checkbox:checked');
+        if (checked.length > 5) {
+          cb.checked = false;
+          alert('You can only select up to 5 events.');
+        }
+      });
+    });
 
     addBtn.addEventListener('click', () => {
       const name = document.getElementById('name').value.trim();
@@ -130,16 +173,17 @@
       const seedTime = document.getElementById('seedTime').value.trim();
       const genderInput = document.querySelector('input[name="gender"]:checked');
       const gender = genderInput ? genderInput.value : null;
+      const events = Array.from(document.querySelectorAll('.event-checkbox:checked')).map(cb => cb.value);
 
-      if (!name || !team || !age || !seedTime || !gender) {
-        statusMessage.textContent = 'Please fill all fields before adding.';
+      if (!name || !team || !age || !seedTime || !gender || events.length === 0) {
+        statusMessage.textContent = 'Please fill all fields and select events.';
         statusMessage.className = 'text-red-600';
         return;
       }
 
-      participantsList.push({ name, team, gender, age: Number(age), seedTime });
+      participantsList.push({ name, team, gender, age: Number(age), seedTime, events });
       renderTable();
-      form.reset();
+      document.getElementById('participantForm').reset();
       statusMessage.textContent = 'Swimmer added! Add more or click Submit All.';
       statusMessage.className = 'text-green-600';
     });
@@ -155,6 +199,7 @@
           <td class="py-2 px-4">${p.gender}</td>
           <td class="py-2 px-4">${p.age}</td>
           <td class="py-2 px-4">${p.seedTime}</td>
+          <td class="py-2 px-4">${p.events.join(', ')}</td>
           <td class="py-2 px-4">
             <button data-index="${idx}" class="remove-btn text-red-600 hover:text-red-800 underline">Remove</button>
           </td>
@@ -162,9 +207,8 @@
         tableBody.appendChild(tr);
       });
 
-      // bind remove buttons
       document.querySelectorAll('.remove-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', e => {
           const index = Number(e.target.getAttribute('data-index'));
           participantsList.splice(index, 1);
           renderTable();
@@ -180,16 +224,12 @@
         statusMessage.className = 'text-red-600';
         return;
       }
-
       statusMessage.textContent = 'Saving all swimmers...';
       statusMessage.className = 'text-blue-600';
 
       try {
         for (const p of participantsList) {
-          await addDoc(collection(db, "participants"), {
-            ...p,
-            createdAt: new Date()
-          });
+          await addDoc(collection(db, "participants"), { ...p, createdAt: new Date() });
         }
         participantsList.length = 0;
         renderTable();
