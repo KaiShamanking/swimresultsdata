@@ -29,18 +29,32 @@
 
         <!-- Filter Controls -->
         <div class="bg-white p-6 rounded-xl shadow-md mb-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
-                <h2 class="text-xl font-semibold text-gray-700 md:col-span-4">Filter & Sort Results</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 items-end">
+                <h2 class="text-xl font-semibold text-gray-700 col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-6">Filter & Sort Results</h2>
                 
                 <div>
-                    <label for="teamFilter" class="block text-sm font-medium text-gray-700">Filter by Team</label>
+                    <label for="teamFilter" class="block text-sm font-medium text-gray-700">Team</label>
                     <select id="teamFilter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
                         <option value="all">All Teams</option>
                     </select>
                 </div>
+                
+                <div>
+                    <label for="genderFilter" class="block text-sm font-medium text-gray-700">Gender</label>
+                    <select id="genderFilter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                        <option value="all">All Genders</option>
+                    </select>
+                </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Filter by Age Range</label>
+                    <label for="eventFilter" class="block text-sm font-medium text-gray-700">Event</label>
+                    <select id="eventFilter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                        <option value="all">All Events</option>
+                    </select>
+                </div>
+
+                <div class="lg:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700">Age Range</label>
                     <div class="flex items-center space-x-2 mt-1">
                         <input type="number" id="ageMinFilter" placeholder="Min" class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                         <span class="text-gray-500">-</span>
@@ -57,8 +71,8 @@
                     </select>
                 </div>
 
-                <div>
-                    <button id="resetFilters" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-md transition">Reset Filters</button>
+                <div class="col-span-full">
+                    <button id="resetFilters" class="w-full sm:w-auto sm:float-right bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-md transition">Reset All Filters</button>
                 </div>
             </div>
         </div>
@@ -114,6 +128,8 @@
         let allParticipants = [];
 
         const teamFilter = document.getElementById('teamFilter');
+        const genderFilter = document.getElementById('genderFilter');
+        const eventFilter = document.getElementById('eventFilter');
         const ageMinFilter = document.getElementById('ageMinFilter');
         const ageMaxFilter = document.getElementById('ageMaxFilter');
         const timeSortFilter = document.getElementById('timeSortFilter');
@@ -136,6 +152,8 @@
         // Function to render the participant rows in the table
         function renderParticipants() {
             const selectedTeam = teamFilter.value;
+            const selectedGender = genderFilter.value;
+            const selectedEvent = eventFilter.value;
             const minAge = ageMinFilter.value ? parseInt(ageMinFilter.value, 10) : null;
             const maxAge = ageMaxFilter.value ? parseInt(ageMaxFilter.value, 10) : null;
             const sortOrder = timeSortFilter.value;
@@ -143,8 +161,10 @@
             // Filter the participants
             let filteredParticipants = allParticipants.filter(p => {
                 const teamMatch = selectedTeam === 'all' || p.team === selectedTeam;
+                const genderMatch = selectedGender === 'all' || p.gender === selectedGender;
+                const eventMatch = selectedEvent === 'all' || (Array.isArray(p.events) && p.events.includes(selectedEvent));
                 const ageMatch = (!minAge || p.age >= minAge) && (!maxAge || p.age <= maxAge);
-                return teamMatch && ageMatch;
+                return teamMatch && genderMatch && eventMatch && ageMatch;
             });
 
             // Sort the filtered participants
@@ -153,7 +173,6 @@
             } else if (sortOrder === 'desc') {
                 filteredParticipants.sort((a, b) => parseTime(b.seedTime) - parseTime(a.seedTime));
             } else {
-                // Default sort by name
                  filteredParticipants.sort((a, b) => a.name.localeCompare(b.name));
             }
 
@@ -182,7 +201,6 @@
                 `;
                 resultsBody.innerHTML += row;
 
-                // Add a visual breakline after each group of 4, but not for the last item
                 if (laneNumber === 4 && index < filteredParticipants.length - 1) {
                     const breakRow = `
                         <tr class="bg-blue-100">
@@ -193,24 +211,18 @@
                 }
             });
         }
-
-        // Function to populate the team filter dropdown
-        function populateTeamFilter(participants) {
-            const teams = [...new Set(participants.map(p => p.team))];
-            teams.sort();
-            
-            const currentSelection = teamFilter.value;
-            
-            teamFilter.innerHTML = '<option value="all">All Teams</option>';
-            teams.forEach(team => {
+        
+        function populateSelectFilter(element, values, defaultOptionText) {
+            const currentSelection = element.value;
+            element.innerHTML = `<option value="all">${defaultOptionText}</option>`;
+            values.forEach(value => {
                 const option = document.createElement('option');
-                option.value = team;
-                option.textContent = team;
-                teamFilter.appendChild(option);
+                option.value = value;
+                option.textContent = value;
+                element.appendChild(option);
             });
-
-            if (teams.includes(currentSelection)) {
-                teamFilter.value = currentSelection;
+            if (values.includes(currentSelection)) {
+                element.value = currentSelection;
             }
         }
 
@@ -231,7 +243,14 @@
                         allParticipants.push({ id: doc.id, ...doc.data() });
                     });
                     
-                    populateTeamFilter(allParticipants);
+                    const teams = [...new Set(allParticipants.map(p => p.team))].sort();
+                    const genders = [...new Set(allParticipants.map(p => p.gender))].sort();
+                    const events = [...new Set(allParticipants.flatMap(p => p.events || []))].sort();
+
+                    populateSelectFilter(teamFilter, teams, 'All Teams');
+                    populateSelectFilter(genderFilter, genders, 'All Genders');
+                    populateSelectFilter(eventFilter, events, 'All Events');
+
                     renderParticipants();
                 }, (error) => {
                     console.error("Error with snapshot listener: ", error);
@@ -246,12 +265,16 @@
 
         // Add event listeners to filter controls
         teamFilter.addEventListener('change', renderParticipants);
+        genderFilter.addEventListener('change', renderParticipants);
+        eventFilter.addEventListener('change', renderParticipants);
         ageMinFilter.addEventListener('input', renderParticipants);
         ageMaxFilter.addEventListener('input', renderParticipants);
         timeSortFilter.addEventListener('change', renderParticipants);
 
         resetFiltersBtn.addEventListener('click', () => {
             teamFilter.value = 'all';
+            genderFilter.value = 'all';
+            eventFilter.value = 'all';
             ageMinFilter.value = '';
             ageMaxFilter.value = '';
             timeSortFilter.value = 'none';
