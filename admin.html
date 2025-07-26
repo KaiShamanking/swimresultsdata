@@ -26,49 +26,49 @@
         }
     </style>
 </head>
-<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen p-4">
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen p-2 sm:p-4">
 
-    <div class="w-full max-w-5xl mx-auto bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8 space-y-8">
+    <div class="w-full max-w-5xl mx-auto bg-gray-800 rounded-2xl shadow-2xl p-4 md:p-8 space-y-6">
         
         <!-- Main Stopwatch Display -->
         <div class="text-center">
-            <h1 class="text-2xl md:text-3xl font-bold text-cyan-400 mb-4">Stopwatch</h1>
-            <div id="stopwatchDisplay" class="timer-display text-5xl md:text-7xl lg:text-8xl font-bold bg-gray-900 rounded-lg p-4 tracking-wider">
+            <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-cyan-400 mb-4">Stopwatch</h1>
+            <div id="stopwatchDisplay" class="timer-display text-4xl sm:text-6xl md:text-8xl font-bold bg-gray-900 rounded-lg p-2 sm:p-4 tracking-tight">
                 00:00.00
             </div>
         </div>
 
         <!-- Controls -->
         <div class="flex justify-center items-center space-x-4">
-            <button id="startPauseBtn" class="btn w-32 md:w-40 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-lg">
+            <button id="startPauseBtn" class="btn w-28 md:w-40 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 sm:px-6 rounded-lg text-base sm:text-lg">
                 Start
             </button>
-            <button id="resetBtn" class="btn w-32 md:w-40 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg text-lg">
+            <button id="resetBtn" class="btn w-28 md:w-40 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 sm:px-6 rounded-lg text-base sm:text-lg">
                 Reset
             </button>
         </div>
 
         <!-- Main Content Area -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="grid grid-cols-2 gap-4 md:gap-8">
             <!-- Left Side: Lanes -->
             <div class="space-y-4">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-xl md:text-2xl font-bold text-cyan-400">Lanes</h2>
-                    <div class="flex space-x-2">
-                        <button id="toggleLaneZeroBtn" title="Toggle Lane 0" class="btn bg-purple-500 hover:bg-purple-600 text-white font-bold w-10 h-10 rounded-full flex items-center justify-center text-2xl pb-1">0</button>
-                        <button id="addLaneBtn" title="Add Lane" class="btn bg-blue-500 hover:bg-blue-600 text-white font-bold w-10 h-10 rounded-full flex items-center justify-center text-2xl pb-1">+</button>
-                        <button id="removeLaneBtn" title="Remove Last Lane" class="btn bg-green-800 hover:bg-green-900 text-white font-bold w-10 h-10 rounded-full flex items-center justify-center text-2xl pb-1">-</button>
+                    <h2 class="text-lg sm:text-xl md:text-2xl font-bold text-cyan-400">Lanes</h2>
+                    <div class="flex space-x-1 sm:space-x-2">
+                        <button id="toggleLaneZeroBtn" title="Toggle Lane 0" class="btn bg-purple-500 hover:bg-purple-600 text-white font-bold w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xl sm:text-2xl pb-1">0</button>
+                        <button id="addLaneBtn" title="Add Lane" class="btn bg-blue-500 hover:bg-blue-600 text-white font-bold w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xl sm:text-2xl pb-1">+</button>
+                        <button id="removeLaneBtn" title="Remove Last Lane" class="btn bg-green-800 hover:bg-green-900 text-white font-bold w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xl sm:text-2xl pb-1">-</button>
                     </div>
                 </div>
-                <div id="lanesContainer" class="space-y-3">
+                <div id="lanesContainer" class="space-y-2">
                     <!-- Lane rows will be dynamically inserted here -->
                 </div>
             </div>
 
             <!-- Right Side: Results -->
             <div class="space-y-4">
-                <h2 class="text-xl md:text-2xl font-bold text-cyan-400 text-center">Results</h2>
-                <div id="resultsContainer" class="space-y-3">
+                <h2 class="text-lg sm:text-xl md:text-2xl font-bold text-cyan-400 text-center">Results</h2>
+                <div id="resultsContainer" class="space-y-2">
                     <!-- Sorted results will be dynamically inserted here -->
                 </div>
             </div>
@@ -100,18 +100,18 @@
         // Creates a DOM element for a single lane
         function createLaneElement(index) {
             const laneRow = document.createElement('div');
-            laneRow.className = 'flex items-center space-x-4';
+            laneRow.className = 'flex items-center space-x-2';
             laneRow.id = `laneRow${index}`;
 
             const laneButton = document.createElement('button');
             laneButton.id = `laneBtn${index}`;
             laneButton.textContent = `Lane ${index}`;
-            laneButton.className = 'btn bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 rounded-md w-28 flex-shrink-0';
+            laneButton.className = 'btn bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 sm:py-3 rounded-md w-20 sm:w-24 flex-shrink-0 text-xs sm:text-base';
             laneButton.onclick = () => recordLaneTime(index);
 
             const laneTimeDiv = document.createElement('div');
-            laneTimeDiv.className = 'bg-gray-700 p-3 rounded-lg flex-grow flex justify-center items-center';
-            laneTimeDiv.innerHTML = `<span id="laneTime${index}" class="timer-display font-medium text-cyan-300 text-2xl">00:00.00</span>`;
+            laneTimeDiv.className = 'bg-gray-700 p-2 sm:p-3 rounded-lg flex-grow flex justify-center items-center';
+            laneTimeDiv.innerHTML = `<span id="laneTime${index}" class="timer-display font-medium text-cyan-300 text-base sm:text-xl">00:00.00</span>`;
             
             laneRow.appendChild(laneButton);
             laneRow.appendChild(laneTimeDiv);
@@ -196,11 +196,11 @@
             results.forEach((result, index) => {
                 const place = getOrdinal(index + 1);
                 const resultDiv = document.createElement('div');
-                resultDiv.className = 'bg-gray-700 p-3 rounded-lg grid grid-cols-3 text-center items-center font-semibold';
+                resultDiv.className = 'bg-gray-700 p-2 sm:p-3 rounded-lg grid grid-cols-3 text-center items-center font-semibold text-xs sm:text-base';
                 resultDiv.innerHTML = `
-                    <span class="text-lg text-yellow-400">${place}</span>
-                    <span class="text-lg text-white">Lane ${result.lane}</span>
-                    <span class="timer-display text-lg text-cyan-300">${result.timeString}</span>
+                    <span class="text-yellow-400">${place}</span>
+                    <span class="text-white">Lane ${result.lane}</span>
+                    <span class="timer-display text-cyan-300">${result.timeString}</span>
                 `;
                 resultsContainer.appendChild(resultDiv);
             });
@@ -243,7 +243,7 @@
             results = [];
             stopwatchDisplay.textContent = '00:00.00';
             startPauseBtn.textContent = 'Start';
-            startPauseBtn.className = 'btn w-32 md:w-40 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg text-lg';
+            startPauseBtn.className = 'btn w-28 md:w-40 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 sm:px-6 rounded-lg text-base sm:text-lg';
             
             resultsContainer.innerHTML = '';
             
@@ -277,7 +277,7 @@
         // Initial setup on page load
         function initializeApp() {
             lanesContainer.innerHTML = '';
-            const initialLaneCount = 10;
+            const initialLaneCount = 8; // Reduced initial lanes for better mobile view
             for(let i = 0; i < initialLaneCount; i++) {
                 addLane();
             }
