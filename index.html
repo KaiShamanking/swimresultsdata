@@ -19,7 +19,7 @@
   <div class="w-full max-w-4xl p-8 space-y-6 bg-white rounded-xl shadow-lg">
     <div class="text-center">
       <h1 class="text-3xl font-bold text-gray-800">Participant Data Entry</h1>
-      <p class="mt-2 text-gray-600">Add multiple swimmers, select events (max 5), then submit all to Firebase.</p>
+      <p class="mt-2 text-gray-600">Add multiple swimmers with their event times, then submit all to Firebase.</p>
     </div>
 
     <!-- Form -->
@@ -45,55 +45,28 @@
           </label>
         </div>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div>
-          <label for="age" class="text-sm font-medium text-gray-700">Age</label>
-          <input type="number" id="age" name="age" required class="form-input mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-        </div>
-        <div>
-          <label for="seedTime" class="text-sm font-medium text-gray-700">Seed Time (e.g., 00:45.23)</label>
-          <input type="text" id="seedTime" name="seedTime" placeholder="MM:SS.ms" required class="form-input mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-        </div>
+      <div>
+        <label for="age" class="text-sm font-medium text-gray-700">Age</label>
+        <input type="number" id="age" name="age" required class="form-input mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
       </div>
 
       <!-- Events -->
       <div>
         <span class="text-sm font-medium text-gray-700">Select Events (max 5)</span>
         <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-          <label class="inline-flex items-center">
-            <input type="checkbox" name="events" value="50m Butterfly" class="event-checkbox">
-            <span class="ml-2">50m Butterfly</span>
-          </label>
-          <label class="inline-flex items-center">
-            <input type="checkbox" name="events" value="50m Freestyle" class="event-checkbox">
-            <span class="ml-2">50m Freestyle</span>
-          </label>
-          <label class="inline-flex items-center">
-            <input type="checkbox" name="events" value="50m Backstroke" class="event-checkbox">
-            <span class="ml-2">50m Backstroke</span>
-          </label>
-          <label class="inline-flex items-center">
-            <input type="checkbox" name="events" value="50m Breaststroke" class="event-checkbox">
-            <span class="ml-2">50m Breaststroke</span>
-          </label>
-          <label class="inline-flex items-center">
-            <input type="checkbox" name="events" value="100m Butterfly" class="event-checkbox">
-            <span class="ml-2">100m Butterfly</span>
-          </label>
-          <label class="inline-flex items-center">
-            <input type="checkbox" name="events" value="100m Freestyle" class="event-checkbox">
-            <span class="ml-2">100m Freestyle</span>
-          </label>
-          <label class="inline-flex items-center">
-            <input type="checkbox" name="events" value="100m Backstroke" class="event-checkbox">
-            <span class="ml-2">100m Backstroke</span>
-          </label>
-          <label class="inline-flex items-center">
-            <input type="checkbox" name="events" value="100m Breaststroke" class="event-checkbox">
-            <span class="ml-2">100m Breaststroke</span>
-          </label>
+          <label><input type="checkbox" class="event-checkbox" value="50m Butterfly"> 50m Butterfly</label>
+          <label><input type="checkbox" class="event-checkbox" value="50m Freestyle"> 50m Freestyle</label>
+          <label><input type="checkbox" class="event-checkbox" value="50m Backstroke"> 50m Backstroke</label>
+          <label><input type="checkbox" class="event-checkbox" value="50m Breaststroke"> 50m Breaststroke</label>
+          <label><input type="checkbox" class="event-checkbox" value="100m Butterfly"> 100m Butterfly</label>
+          <label><input type="checkbox" class="event-checkbox" value="100m Freestyle"> 100m Freestyle</label>
+          <label><input type="checkbox" class="event-checkbox" value="100m Backstroke"> 100m Backstroke</label>
+          <label><input type="checkbox" class="event-checkbox" value="100m Breaststroke"> 100m Breaststroke</label>
         </div>
       </div>
+
+      <!-- Times for events -->
+      <div id="eventTimesContainer" class="space-y-3 mt-4"></div>
 
       <div class="flex gap-4">
         <button type="button" id="addParticipant" class="btn-primary w-1/2 flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
@@ -117,8 +90,7 @@
               <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Team</th>
               <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Gender</th>
               <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Age</th>
-              <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Seed Time</th>
-              <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Events</th>
+              <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Events & Times</th>
               <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Actions</th>
             </tr>
           </thead>
@@ -154,36 +126,55 @@
     const submitAllBtn = document.getElementById('submitAll');
     const statusMessage = document.getElementById('statusMessage');
     const tableBody = document.getElementById('participantsTableBody');
+    const eventTimesContainer = document.getElementById('eventTimesContainer');
+    const eventCheckboxes = document.querySelectorAll('.event-checkbox');
 
-    // Limit to 5 event checkboxes
-    document.querySelectorAll('.event-checkbox').forEach(cb => {
+    // Limit to 5 events & show time inputs
+    eventCheckboxes.forEach(cb => {
       cb.addEventListener('change', () => {
         const checked = document.querySelectorAll('.event-checkbox:checked');
         if (checked.length > 5) {
           cb.checked = false;
           alert('You can only select up to 5 events.');
         }
+        renderEventTimeInputs();
       });
     });
+
+    function renderEventTimeInputs() {
+      eventTimesContainer.innerHTML = '';
+      document.querySelectorAll('.event-checkbox:checked').forEach(cb => {
+        const div = document.createElement('div');
+        div.innerHTML = `
+          <label class="block text-sm font-medium text-gray-700">${cb.value} Time</label>
+          <input type="text" data-event="${cb.value}" placeholder="MM:SS.ms"
+            class="event-time-input form-input mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+        `;
+        eventTimesContainer.appendChild(div);
+      });
+    }
 
     addBtn.addEventListener('click', () => {
       const name = document.getElementById('name').value.trim();
       const team = document.getElementById('team').value.trim();
       const age = document.getElementById('age').value;
-      const seedTime = document.getElementById('seedTime').value.trim();
       const genderInput = document.querySelector('input[name="gender"]:checked');
       const gender = genderInput ? genderInput.value : null;
-      const events = Array.from(document.querySelectorAll('.event-checkbox:checked')).map(cb => cb.value);
+      const events = Array.from(document.querySelectorAll('.event-checkbox:checked')).map(cb => {
+        const timeInput = document.querySelector(`.event-time-input[data-event="${cb.value}"]`);
+        return { event: cb.value, time: timeInput.value.trim() };
+      });
 
-      if (!name || !team || !age || !seedTime || !gender || events.length === 0) {
-        statusMessage.textContent = 'Please fill all fields and select events.';
+      if (!name || !team || !age || !gender || events.length === 0 || events.some(e => !e.time)) {
+        statusMessage.textContent = 'Please fill all fields and provide times for selected events.';
         statusMessage.className = 'text-red-600';
         return;
       }
 
-      participantsList.push({ name, team, gender, age: Number(age), seedTime, events });
+      participantsList.push({ name, team, gender, age: Number(age), events });
       renderTable();
       document.getElementById('participantForm').reset();
+      eventTimesContainer.innerHTML = '';
       statusMessage.textContent = 'Swimmer added! Add more or click Submit All.';
       statusMessage.className = 'text-green-600';
     });
@@ -191,6 +182,7 @@
     function renderTable() {
       tableBody.innerHTML = '';
       participantsList.forEach((p, idx) => {
+        const eventText = p.events.map(e => `${e.event}: ${e.time}`).join('<br>');
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td class="py-2 px-4">${idx + 1}</td>
@@ -198,8 +190,7 @@
           <td class="py-2 px-4">${p.team}</td>
           <td class="py-2 px-4">${p.gender}</td>
           <td class="py-2 px-4">${p.age}</td>
-          <td class="py-2 px-4">${p.seedTime}</td>
-          <td class="py-2 px-4">${p.events.join(', ')}</td>
+          <td class="py-2 px-4">${eventText}</td>
           <td class="py-2 px-4">
             <button data-index="${idx}" class="remove-btn text-red-600 hover:text-red-800 underline">Remove</button>
           </td>
