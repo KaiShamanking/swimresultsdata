@@ -22,7 +22,7 @@
 
         <!-- Filter Controls -->
         <div class="bg-white p-6 rounded-xl shadow-md mb-8">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                 <h2 class="text-xl font-semibold text-gray-700 md:col-span-3">Filter Results</h2>
                 
                 <div>
@@ -33,13 +33,16 @@
                 </div>
 
                 <div>
-                    <label for="ageFilter" class="block text-sm font-medium text-gray-700">Filter by Age</label>
-                    <input type="number" id="ageFilter" placeholder="Enter age" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <label class="block text-sm font-medium text-gray-700">Filter by Age Range</label>
+                    <div class="flex items-center space-x-2 mt-1">
+                        <input type="number" id="ageMinFilter" placeholder="Min" class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        <span class="text-gray-500">-</span>
+                        <input type="number" id="ageMaxFilter" placeholder="Max" class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-transparent">&nbsp;</label>
-                    <button id="resetFilters" class="mt-1 w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-md transition">Reset Filters</button>
+                    <button id="resetFilters" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-md transition">Reset Filters</button>
                 </div>
             </div>
         </div>
@@ -82,7 +85,8 @@
         let allParticipants = []; // To store the original list of participants
 
         const teamFilter = document.getElementById('teamFilter');
-        const ageFilter = document.getElementById('ageFilter');
+        const ageMinFilter = document.getElementById('ageMinFilter');
+        const ageMaxFilter = document.getElementById('ageMaxFilter');
         const resultsContainer = document.getElementById('resultsContainer');
         const statusMessage = document.getElementById('statusMessage');
         const resetFiltersBtn = document.getElementById('resetFilters');
@@ -90,12 +94,15 @@
         // Function to render the participant cards
         function renderParticipants() {
             const selectedTeam = teamFilter.value;
-            const selectedAge = ageFilter.value;
+            const minAge = ageMinFilter.value ? parseInt(ageMinFilter.value, 10) : null;
+            const maxAge = ageMaxFilter.value ? parseInt(ageMaxFilter.value, 10) : null;
 
             // Filter the participants based on the selected criteria
             const filteredParticipants = allParticipants.filter(p => {
                 const teamMatch = selectedTeam === 'all' || p.team === selectedTeam;
-                const ageMatch = !selectedAge || p.age.toString() === selectedAge;
+                
+                const ageMatch = (!minAge || p.age >= minAge) && (!maxAge || p.age <= maxAge);
+
                 return teamMatch && ageMatch;
             });
 
@@ -130,7 +137,6 @@
             const teams = [...new Set(participants.map(p => p.team))]; // Get unique team names
             teams.sort();
             
-            // Save current selection to re-apply after repopulating
             const currentSelection = teamFilter.value;
             
             teamFilter.innerHTML = '<option value="all">All Teams</option>'; // Reset
@@ -141,7 +147,6 @@
                 teamFilter.appendChild(option);
             });
 
-            // Re-select the previously selected team if it still exists
             if (teams.includes(currentSelection)) {
                 teamFilter.value = currentSelection;
             }
@@ -157,7 +162,6 @@
                 }
                 console.log("Authenticated successfully.");
 
-                // Listen for real-time updates from Firestore
                 const q = query(collection(db, "participants"));
                 onSnapshot(q, (querySnapshot) => {
                     allParticipants = [];
@@ -165,11 +169,10 @@
                         allParticipants.push({ id: doc.id, ...doc.data() });
                     });
                     
-                    // Sort by name initially
                     allParticipants.sort((a, b) => a.name.localeCompare(b.name));
 
                     populateTeamFilter(allParticipants);
-                    renderParticipants(); // Initial render
+                    renderParticipants();
                 });
 
             } catch (error) {
@@ -180,10 +183,12 @@
 
         // Add event listeners to filter controls
         teamFilter.addEventListener('change', renderParticipants);
-        ageFilter.addEventListener('input', renderParticipants);
+        ageMinFilter.addEventListener('input', renderParticipants);
+        ageMaxFilter.addEventListener('input', renderParticipants);
         resetFiltersBtn.addEventListener('click', () => {
             teamFilter.value = 'all';
-            ageFilter.value = '';
+            ageMinFilter.value = '';
+            ageMaxFilter.value = '';
             renderParticipants();
         });
 
