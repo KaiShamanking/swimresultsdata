@@ -149,6 +149,15 @@
             return minutes + seconds + milliseconds;
         }
 
+        // Helper function to get the time for a specific event from a participant's events array
+        function getEventTime(participant, eventName) {
+            if (!participant.events || !Array.isArray(participant.events) || eventName === 'all') {
+                return null;
+            }
+            const eventObj = participant.events.find(e => e.event === eventName);
+            return eventObj ? eventObj.time : null;
+        }
+
         // Function to render the participant rows in the table
         function renderParticipants() {
             const selectedTeam = teamFilter.value;
@@ -162,8 +171,8 @@
             let filteredParticipants = allParticipants.filter(p => {
                 const teamMatch = selectedTeam === 'all' || p.team === selectedTeam;
                 const genderMatch = selectedGender === 'all' || p.gender === selectedGender;
-                // Check if the participant has the selected event
-                const eventMatch = selectedEvent === 'all' || (p.events && typeof p.events === 'object' && p.events.hasOwnProperty(selectedEvent));
+                // Check if the participant has the selected event in their events array
+                const eventMatch = selectedEvent === 'all' || (p.events && Array.isArray(p.events) && p.events.some(e => e.event === selectedEvent));
                 const ageMatch = (!minAge || p.age >= minAge) && (!maxAge || p.age <= maxAge);
                 return teamMatch && genderMatch && eventMatch && ageMatch;
             });
@@ -172,9 +181,9 @@
             // Time sorting is only active if a specific event is selected
             if (sortOrder !== 'none' && selectedEvent !== 'all') {
                 if (sortOrder === 'asc') {
-                    filteredParticipants.sort((a, b) => parseTime(a.events[selectedEvent]) - parseTime(b.events[selectedEvent]));
+                    filteredParticipants.sort((a, b) => parseTime(getEventTime(a, selectedEvent)) - parseTime(getEventTime(b, selectedEvent)));
                 } else if (sortOrder === 'desc') {
-                    filteredParticipants.sort((a, b) => parseTime(b.events[selectedEvent]) - parseTime(a.events[selectedEvent]));
+                    filteredParticipants.sort((a, b) => parseTime(getEventTime(b, selectedEvent)) - parseTime(getEventTime(a, selectedEvent)));
                 }
             } else {
                  filteredParticipants.sort((a, b) => a.name.localeCompare(b.name));
@@ -195,7 +204,7 @@
             filteredParticipants.forEach((p, index) => {
                 const laneNumber = (index % 4) + 1;
                 // Get the seed time for the selected event, or show '---' if no event is selected
-                const seedTime = (selectedEvent !== 'all' && p.events && p.events[selectedEvent]) ? p.events[selectedEvent] : '---';
+                const seedTime = getEventTime(p, selectedEvent) || '---';
 
                 const row = `
                     <tr class="hover:bg-gray-50 transition-colors duration-200">
@@ -252,8 +261,8 @@
                     
                     const teams = [...new Set(allParticipants.map(p => p.team))].sort();
                     const genders = [...new Set(allParticipants.map(p => p.gender).filter(g => g))].sort();
-                    // Get all event names from the events object for each participant
-                    const events = [...new Set(allParticipants.flatMap(p => (p.events && typeof p.events === 'object') ? Object.keys(p.events) : []))].sort();
+                    // Get all event names from the events array for each participant
+                    const events = [...new Set(allParticipants.flatMap(p => (p.events && Array.isArray(p.events)) ? p.events.map(e => e.event) : []))].sort();
 
                     populateSelectFilter(teamFilter, teams, 'All Teams');
                     populateSelectFilter(genderFilter, genders, 'All Genders');
