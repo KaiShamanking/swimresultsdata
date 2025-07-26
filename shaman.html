@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swim Participant Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800">Swim Participants</h1>
+            <p class="mt-2 text-gray-600">View and filter participant data from Firebase.</p>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="bg-white p-6 rounded-xl shadow-md mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <h2 class="text-xl font-semibold text-gray-700 md:col-span-3">Filter Results</h2>
+                
+                <div>
+                    <label for="teamFilter" class="block text-sm font-medium text-gray-700">Filter by Team</label>
+                    <select id="teamFilter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                        <option value="all">All Teams</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="ageFilter" class="block text-sm font-medium text-gray-700">Filter by Age</label>
+                    <input type="number" id="ageFilter" placeholder="Enter age" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-transparent">&nbsp;</label>
+                    <button id="resetFilters" class="mt-1 w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-md transition">Reset Filters</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Container -->
+        <div id="resultsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Participant cards will be inserted here by JavaScript -->
+        </div>
+        
+        <!-- Loading / No Results Message -->
+        <div id="statusMessage" class="text-center py-10 text-gray-500">
+            <p>Loading participants...</p>
+        </div>
+
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, query, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // --- Your Firebase Configuration ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyBZk__e3uaXa676oO4J5i9fxwSn_jP2Nq4",
+          authDomain: "swimresultsdata.firebaseapp.com",
+          projectId: "swimresultsdata",
+          storageBucket: "swimresultsdata.appspot.com",
+          messagingSenderId: "816372780565",
+          appId: "1:816372780565:web:76eaafd9f40f33854881c"
+        };
+
+        // --- App Logic ---
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        setLogLevel('error'); // Set to 'debug' for more logs, 'error' for less
+
+        let allParticipants = []; // To store the original list of participants
+
+        const teamFilter = document.getElementById('teamFilter');
+        const ageFilter = document.getElementById('ageFilter');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const statusMessage = document.getElementById('statusMessage');
+        const resetFiltersBtn = document.getElementById('resetFilters');
+
+        // Function to render the participant cards
+        function renderParticipants() {
+            const selectedTeam = teamFilter.value;
+            const selectedAge = ageFilter.value;
+
+            // Filter the participants based on the selected criteria
+            const filteredParticipants = allParticipants.filter(p => {
+                const teamMatch = selectedTeam === 'all' || p.team === selectedTeam;
+                const ageMatch = !selectedAge || p.age.toString() === selectedAge;
+                return teamMatch && ageMatch;
+            });
+
+            resultsContainer.innerHTML = ''; // Clear previous results
+
+            if (filteredParticipants.length === 0) {
+                statusMessage.innerHTML = '<p>No participants match the current filters.</p>';
+                statusMessage.classList.remove('hidden');
+            } else {
+                statusMessage.classList.add('hidden');
+            }
+
+            filteredParticipants.forEach(p => {
+                const card = `
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden transform hover:scale-105 transition-transform duration-300">
+                        <div class="p-6">
+                            <div class="uppercase tracking-wide text-sm text-blue-600 font-bold">${p.team}</div>
+                            <h3 class="block mt-1 text-lg leading-tight font-medium text-black">${p.name}</h3>
+                            <div class="mt-4 flex justify-between items-center text-gray-600">
+                                <span>Age: <span class="font-semibold">${p.age}</span></span>
+                                <span>Seed: <span class="font-semibold">${p.seedTime}</span></span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                resultsContainer.innerHTML += card;
+            });
+        }
+
+        // Function to populate the team filter dropdown
+        function populateTeamFilter(participants) {
+            const teams = [...new Set(participants.map(p => p.team))]; // Get unique team names
+            teams.sort();
+            
+            // Save current selection to re-apply after repopulating
+            const currentSelection = teamFilter.value;
+            
+            teamFilter.innerHTML = '<option value="all">All Teams</option>'; // Reset
+            teams.forEach(team => {
+                const option = document.createElement('option');
+                option.value = team;
+                option.textContent = team;
+                teamFilter.appendChild(option);
+            });
+
+            // Re-select the previously selected team if it still exists
+            if (teams.includes(currentSelection)) {
+                teamFilter.value = currentSelection;
+            }
+        }
+
+        // Function to handle authentication
+        async function main() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                console.log("Authenticated successfully.");
+
+                // Listen for real-time updates from Firestore
+                const q = query(collection(db, "participants"));
+                onSnapshot(q, (querySnapshot) => {
+                    allParticipants = [];
+                    querySnapshot.forEach((doc) => {
+                        allParticipants.push({ id: doc.id, ...doc.data() });
+                    });
+                    
+                    // Sort by name initially
+                    allParticipants.sort((a, b) => a.name.localeCompare(b.name));
+
+                    populateTeamFilter(allParticipants);
+                    renderParticipants(); // Initial render
+                });
+
+            } catch (error) {
+                console.error("Error during setup:", error);
+                statusMessage.innerHTML = `<p class="text-red-500">Error loading data: ${error.message}. Make sure your security rules are set to allow reads.</p>`;
+            }
+        }
+
+        // Add event listeners to filter controls
+        teamFilter.addEventListener('change', renderParticipants);
+        ageFilter.addEventListener('input', renderParticipants);
+        resetFiltersBtn.addEventListener('click', () => {
+            teamFilter.value = 'all';
+            ageFilter.value = '';
+            renderParticipants();
+        });
+
+        // Run the main function on page load
+        main();
+    </script>
+</body>
+</html>
