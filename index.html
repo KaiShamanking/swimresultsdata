@@ -10,7 +10,6 @@
         body {
             font-family: 'Inter', sans-serif;
         }
-        /* Custom styles for better visual feedback */
         .form-input {
             transition: all 0.3s ease-in-out;
         }
@@ -49,6 +48,21 @@
                 <input type="text" id="team" name="team" required class="form-input mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
             </div>
 
+            <!-- NEW: Gender -->
+            <div>
+                <span class="text-sm font-medium text-gray-700">Gender</span>
+                <div class="mt-2 flex items-center gap-6">
+                    <label class="inline-flex items-center">
+                        <input type="radio" name="gender" value="Male" class="form-radio text-blue-600">
+                        <span class="ml-2 text-gray-700">Male</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="radio" name="gender" value="Female" class="form-radio text-blue-600">
+                        <span class="ml-2 text-gray-700">Female</span>
+                    </label>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                     <label for="age" class="text-sm font-medium text-gray-700">Age</label>
@@ -73,37 +87,29 @@
 
     <!-- Firebase SDK -->
     <script type="module">
-        // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // --- Your Firebase Configuration ---
         const firebaseConfig = {
           apiKey: "AIzaSyBZk__e3uaXa676oO4J5i9fxwSn_jP2Nq4",
           authDomain: "swimresultsdata.firebaseapp.com",
           projectId: "swimresultsdata",
-          storageBucket: "swimresultsdata.appspot.com", // Corrected this value
+          storageBucket: "swimresultsdata.appspot.com",
           messagingSenderId: "816372780565",
           appId: "1:816372780565:web:76ea6afd9f40f33854881c"
         };
         
-        // --- DO NOT EDIT BELOW THIS LINE ---
-
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-        setLogLevel('debug'); // Use 'debug' for detailed logs, or 'silent' to turn them off
+        setLogLevel('debug');
 
-        // Function to handle authentication
         async function authenticate() {
             try {
-                // This environment provides a token for authentication
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     console.log("Signing in with custom token...");
                     await signInWithCustomToken(auth, __initial_auth_token);
-                // As a fallback for local testing, sign in anonymously
                 } else {
                     console.log("Signing in anonymously...");
                     await signInAnonymously(auth);
@@ -113,69 +119,62 @@
                 console.error("Authentication failed:", error);
                 const statusMessage = document.getElementById('statusMessage');
                 let errorMessage = `Authentication Failed: ${error.message}`;
-                
-                // This specific error code almost always means the sign-in method is not enabled in the Firebase Console.
                 if (error.code === 'auth/configuration-not-found') {
                     errorMessage += '<br><br><b class="text-lg">ACTION REQUIRED:</b><br>Please go to your Firebase project\'s <b>Authentication -> Sign-in method</b> tab and ensure the <b>Anonymous</b> provider is enabled.';
                 }
-                statusMessage.innerHTML = errorMessage; // Use innerHTML to render the HTML tags
+                statusMessage.innerHTML = errorMessage;
                 statusMessage.className = 'text-red-600 p-4 bg-red-100 rounded-lg';
             }
         }
 
-        // Get the form and status message elements
         const participantForm = document.getElementById('participantForm');
         const statusMessage = document.getElementById('statusMessage');
 
-        // Add event listener for form submission
         participantForm.addEventListener('submit', async (e) => {
-            e.preventDefault(); // Prevent the default form submission
+            e.preventDefault();
 
-            // Check if user is authenticated
             if (!auth.currentUser) {
                 statusMessage.textContent = 'Not authenticated. Please wait and try again.';
                 statusMessage.className = 'text-yellow-600';
-                await authenticate(); // Try to authenticate again
+                await authenticate();
                 return;
             }
 
-            // Get data from the form
-            const name = document.getElementById('name').value;
-            const team = document.getElementById('team').value;
+            const name = document.getElementById('name').value.trim();
+            const team = document.getElementById('team').value.trim();
             const age = document.getElementById('age').value;
-            const seedTime = document.getElementById('seedTime').value;
+            const seedTime = document.getElementById('seedTime').value.trim();
+            const genderInput = document.querySelector('input[name="gender"]:checked'); // NEW
+            const gender = genderInput ? genderInput.value : null; // NEW
 
             // Basic validation
-            if (!name || !team || !age || !seedTime) {
-                statusMessage.textContent = 'Please fill out all fields.';
+            if (!name || !team || !age || !seedTime || !gender) { // NEW: gender
+                statusMessage.textContent = 'Please fill out all fields, including gender.';
                 statusMessage.className = 'text-red-600';
                 return;
             }
 
-            // Show a "saving" message
             statusMessage.textContent = 'Saving data...';
             statusMessage.className = 'text-blue-600';
 
             try {
-                // The collection name in Firestore will be 'participants'
                 const docRef = await addDoc(collection(db, "participants"), {
-                    name: name,
-                    team: team,
-                    age: Number(age), // Ensure age is stored as a number
-                    seedTime: seedTime,
-                    createdAt: new Date() // Add a timestamp
+                    name,
+                    team,
+                    gender, // NEW
+                    age: Number(age),
+                    seedTime,
+                    createdAt: new Date()
                 });
 
                 console.log("Document written with ID: ", docRef.id);
                 statusMessage.textContent = 'Data saved successfully!';
                 statusMessage.className = 'text-green-600';
 
-                // Clear the form fields after successful submission
                 participantForm.reset();
 
             } catch (error) {
                 console.error("Error adding document: ", error);
-                // Provide a more specific error if possible
                 let errorMessage = `Error saving data: ${error.message}. Check console for details.`;
                 if (error.code === 'permission-denied') {
                     errorMessage = "Permission Denied. Make sure your Firestore security rules allow writes from this domain.";
@@ -185,9 +184,7 @@
             }
         });
 
-        // Authenticate when the page loads
         window.onload = authenticate;
-
     </script>
 </body>
 </html>
