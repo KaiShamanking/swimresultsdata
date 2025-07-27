@@ -193,41 +193,18 @@
 
                 let heats = [];
                 const totalSwimmers = filteredParticipants.length;
-                let numHeats = Math.ceil(totalSwimmers / lanesPerHeat);
                 let swimmersInFirstHeat = totalSwimmers % lanesPerHeat;
                 if (swimmersInFirstHeat === 0 && totalSwimmers > 0) {
                     swimmersInFirstHeat = lanesPerHeat;
                 }
                 
-                // NEW LOGIC: Redistribute if first heat has too few swimmers
-                if (numHeats > 1 && swimmersInFirstHeat > 0 && swimmersInFirstHeat < 3) {
-                    // Avoid heats of 1 or 2 by redistributing
-                    const swimmersToDistribute = swimmersInFirstHeat;
-                    const remainingSwimmers = totalSwimmers - swimmersToDistribute;
-                    const remainingHeats = numHeats - 1;
-                    
-                    // Take the slowest swimmers and add them to the remaining swimmers
-                    const combinedPool = filteredParticipants.slice(0, remainingSwimmers + swimmersToDistribute);
-                    
-                    // Recalculate heat distribution for this larger pool
-                    const baseSize = Math.floor(combinedPool.length / remainingHeats);
-                    const extra = combinedPool.length % remainingHeats;
-
-                    let currentPos = 0;
-                    for (let i = 0; i < remainingHeats; i++) {
-                        const heatSize = baseSize + (i < extra ? 1 : 0);
-                        heats.push(combinedPool.slice(currentPos, currentPos + heatSize));
-                        currentPos += heatSize;
-                    }
-                } else {
-                    // Original "bottom-up" logic
-                    if (swimmersInFirstHeat > 0) {
-                        heats.push(filteredParticipants.slice(0, swimmersInFirstHeat));
-                    }
-                    const fullHeatsStartAt = swimmersInFirstHeat;
-                    for (let i = fullHeatsStartAt; i < totalSwimmers; i += lanesPerHeat) {
-                        heats.push(filteredParticipants.slice(i, i + lanesPerHeat));
-                    }
+                // Original "bottom-up" logic
+                if (swimmersInFirstHeat > 0) {
+                    heats.push(filteredParticipants.slice(0, swimmersInFirstHeat));
+                }
+                const fullHeatsStartAt = swimmersInFirstHeat;
+                for (let i = fullHeatsStartAt; i < totalSwimmers; i += lanesPerHeat) {
+                    heats.push(filteredParticipants.slice(i, i + lanesPerHeat));
                 }
 
                 // Process the generated heats for display
