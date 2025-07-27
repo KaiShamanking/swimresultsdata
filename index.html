@@ -13,9 +13,6 @@
     .btn-primary { transition: background-color 0.3s, transform 0.2s; }
     .btn-primary:hover { background-color: #1d4ed8; }
     .btn-primary:active { transform: scale(0.98); }
-    input[type="time"]::-webkit-calendar-picker-indicator {
-      filter: invert(0.5);
-    }
   </style>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
@@ -150,7 +147,8 @@
         const div = document.createElement('div');
         div.innerHTML = `
           <label class="block text-sm font-medium text-gray-700">${cb.value} Time</label>
-          <input type="time" step="1" data-event="${cb.value}" value="00:00" class="event-time-input form-input mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+          <input type="text" data-event="${cb.value}" value="00:00"
+            class="event-time-input form-input mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
         `;
         eventTimesContainer.appendChild(div);
       });
