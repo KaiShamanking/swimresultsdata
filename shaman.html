@@ -159,13 +159,18 @@
 
             const useSpecialSeeding = sortOrder !== 'none' && selectedEvent !== 'all';
 
-            // Sort by time first if special seeding is used
+            // Sort by time first
             if (useSpecialSeeding) {
+                // Ascending sort puts fastest times first.
+                filteredParticipants.sort((a, b) => parseTime(getEventTime(a, selectedEvent)) - parseTime(getEventTime(b, selectedEvent)));
+                
+                // For slowest-to-fastest heats, we reverse the entire list of swimmers.
+                // The fastest swimmers are now at the end, destined for the last heat.
                 if (sortOrder === 'asc') {
-                    filteredParticipants.sort((a, b) => parseTime(getEventTime(a, selectedEvent)) - parseTime(getEventTime(b, selectedEvent)));
-                } else if (sortOrder === 'desc') {
-                    filteredParticipants.sort((a, b) => parseTime(getEventTime(b, selectedEvent)) - parseTime(getEventTime(a, selectedEvent)));
+                    filteredParticipants.reverse();
                 }
+                // If sort order is 'desc', the slowest are already first, so no reversal is needed.
+
             } else {
                  // Default sort by name
                  filteredParticipants.sort((a, b) => a.name.localeCompare(b.name));
