@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stopwatch with Lane Timers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .timer-display {
+            font-family: 'Roboto Mono', monospace;
+        }
+        .btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        .listening {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+        .highlight-word {
+            background-color: #facc15; /* yellow-400 */
+            color: #1f2937; /* gray-800 */
+            padding: 0 4px;
+            border-radius: 4px;
+            transition: all 0.5s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen p-2 sm:p-4">
+
+    <div class="w-full max-w-5xl mx-auto bg-gray-800 rounded-2xl shadow-2xl p-4 md:p-8 space-y-6">
+        
+        <!-- Main Stopwatch Display -->
+        <div class="text-center">
+            <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-cyan-400 mb-4">Stopwatch</h1>
+            <div id="stopwatchDisplay" class="timer-display text-4xl sm:text-6xl md:text-8xl font-bold bg-gray-900 rounded-lg p-2 sm:p-4 tracking-tight">
+                00:00.00
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="flex justify-center items-center space-x-2 sm:space-x-4">
+            <button id="startPauseBtn" class="btn w-24 md:w-32 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 sm:px-6 rounded-lg text-base sm:text-lg">
+                Start
+            </button>
+            <button id="resetBtn" class="btn w-24 md:w-32 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 sm:px-6 rounded-lg text-base sm:text-lg">
+                Reset
+            </button>
+            <button id="voiceControlBtn" class="btn w-24 md:w-32 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 sm:px-6 rounded-lg text-base sm:text-lg">
+                Voice
+            </button>
+        </div>
+
+        <!-- Voice Recognition Feedback -->
+        <div id="voiceTranscriptContainer" class="text-center space-y-2 hidden">
+            <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Mic Input</h3>
+            <div id="voiceTranscriptDisplay" class="timer-display text-lg text-yellow-300 bg-gray-700 rounded-md p-2 min-h-[2.5rem] w-full max-w-md mx-auto">
+                ...
+            </div>
+            <div id="syllableDisplay" class="flex flex-wrap justify-center items-center gap-2 timer-display text-lg text-gray-800 min-h-[2.5rem]">
+                <!-- Syllable/word spans will be inserted here -->
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="grid grid-cols-2 gap-4 md:gap-8">
+            <!-- Left Side: Lanes -->
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg sm:text-xl md:text-2xl font-bold text-cyan-400">Lanes</h2>
+                    <div class="flex space-x-1 sm:space-x-2">
+                        <button id="toggleLaneZeroBtn" title="Toggle Lane 0" class="btn bg-purple-500 hover:bg-purple-600 text-white font-bold w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xl sm:text-2xl pb-1">0</button>
+                        <button id="addLaneBtn" title="Add Lane" class="btn bg-blue-500 hover:bg-blue-600 text-white font-bold w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xl sm:text-2xl pb-1">+</button>
+                        <button id="removeLaneBtn" title="Remove Last Lane" class="btn bg-green-800 hover:bg-green-900 text-white font-bold w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xl sm:text-2xl pb-1">-</button>
+                    </div>
+                </div>
+                <div id="lanesContainer" class="space-y-2">
+                    <!-- Lane rows will be dynamically inserted here -->
+                </div>
+            </div>
+
+            <!-- Right Side: Results -->
+            <div class="space-y-4">
+                <h2 class="text-lg sm:text-xl md:text-2xl font-bold text-cyan-400 text-center">Results</h2>
+                <div id="resultsContainer" class="space-y-2">
+                    <!-- Sorted results will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const stopwatchDisplay = document.getElementById('stopwatchDisplay');
+        const startPauseBtn = document.getElementById('startPauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const lanesContainer = document.getElementById('lanesContainer');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const addLaneBtn = document.getElementById('addLaneBtn');
+        const removeLaneBtn = document.getElementById('removeLaneBtn');
+        const toggleLaneZeroBtn = document.getElementById('toggleLaneZeroBtn');
+        const voiceControlBtn = document.getElementById('voiceControlBtn');
+        const voiceTranscriptContainer = document.getElementById('voiceTranscriptContainer');
+        const voiceTranscriptDisplay = document.getElementById('voiceTranscriptDisplay');
+        const syllableDisplay = document.getElementById('syllableDisplay');
+
+        // Timer and state variables
+        let startTime, updatedTime, difference, tInterval;
+        let running = false;
+        let paused = false;
+        let timeOffset = 0;
+        let results = []; // Array to store {lane, time, timeString}
+        let laneCount = 0; // Number of lanes *besides* lane 0
+        let hasLaneZero = false;
+        const MAX_LANES = 20; // Max number of lanes besides lane 0
+        const MIN_LANES = 1;
+
+        // Voice Recognition variables
+        let recognition;
+        let isListening = false;
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+        }
+
+        // Creates a DOM element for a single lane
+        function createLaneElement(index) {
+            const laneRow = document.createElement('div');
+            laneRow.className = 'flex items-center space-x-2';
+            laneRow.id = `laneRow${index}`;
+
+            const laneButton = document.createElement('button');
+            laneButton.id = `laneBtn${index}`;
+            laneButton.textContent = `Lane ${index}`;
+            laneButton.className = 'btn bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 sm:py-3 rounded-md w-20 sm:w-24 flex-shrink-0 text-xs sm:text-base';
+            laneButton.onclick = () => recordLaneTime(index);
+
+            const laneTimeDiv = document.createElement('div');
+            laneTimeDiv.className = 'bg-gray-700 p-2 sm:p-3 rounded-lg flex-grow flex justify-center items-center';
+            laneTimeDiv.innerHTML = `<span id="laneTime${index}" class="timer-display font-medium text-cyan-300 text-base sm:text-xl">00:00.00</span>`;
+            
+            laneRow.appendChild(laneButton);
+            laneRow.appendChild(laneTimeDiv);
+            return laneRow;
+        }
+        
+        // Adds a new lane (starting from 1)
+        function addLane() {
+            if (laneCount >= MAX_LANES) return;
+            const newLaneIndex = laneCount + 1;
+            const newLane = createLaneElement(newLaneIndex);
+            lanesContainer.appendChild(newLane);
+            laneCount++;
+            updateLaneButtonsState();
+        }
+
+        // Removes the last lane (not lane 0)
+        function removeLane() {
+            if (laneCount <= MIN_LANES) return;
+            const laneToRemoveIndex = laneCount;
+            const rowToRemove = document.getElementById(`laneRow${laneToRemoveIndex}`);
+            if (rowToRemove) {
+                lanesContainer.removeChild(rowToRemove);
+            }
+            laneCount--;
+            results = results.filter(r => r.lane !== laneToRemoveIndex);
+            updateResultsDisplay();
+            updateLaneButtonsState();
+        }
+
+        // Toggles the existence of Lane 0
+        function toggleLaneZero() {
+            hasLaneZero = !hasLaneZero;
+            if (hasLaneZero) {
+                const laneZeroElement = createLaneElement(0);
+                lanesContainer.prepend(laneZeroElement);
+                toggleLaneZeroBtn.classList.replace('bg-purple-500', 'bg-red-500');
+            } else {
+                const rowToRemove = document.getElementById('laneRow0');
+                if (rowToRemove) {
+                    lanesContainer.removeChild(rowToRemove);
+                }
+                results = results.filter(r => r.lane !== 0);
+                updateResultsDisplay();
+                toggleLaneZeroBtn.classList.replace('bg-red-500', 'bg-purple-500');
+            }
+        }
+
+        // Updates the enabled/disabled state of lane control buttons
+        function updateLaneButtonsState() {
+            removeLaneBtn.disabled = laneCount <= MIN_LANES;
+            addLaneBtn.disabled = laneCount >= MAX_LANES;
+        }
+
+        // Format time helper function (MM:SS.ss)
+        function formatTime(ms) {
+            const totalSeconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            const centiseconds = Math.floor((ms % 1000) / 10);
+            return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(centiseconds).padStart(2, '0')}`;
+        }
+
+        // Get ordinal suffix for numbers (1st, 2nd, 3rd)
+        function getOrdinal(n) {
+            const s = ["th", "st", "nd", "rd"], v = n % 100;
+            return n + (s[(v - 20) % 10] || s[v] || s[0]);
+        }
+
+        // Update the main timer display
+        function updateDisplay() {
+            updatedTime = new Date().getTime();
+            difference = (updatedTime - startTime) + timeOffset;
+            stopwatchDisplay.textContent = formatTime(difference);
+        }
+
+        // Update the results display
+        function updateResultsDisplay() {
+            resultsContainer.innerHTML = '';
+            results.sort((a, b) => a.time - b.time);
+
+            results.forEach((result, index) => {
+                const place = getOrdinal(index + 1);
+                const resultDiv = document.createElement('div');
+                resultDiv.className = 'bg-gray-700 p-2 sm:p-3 rounded-lg grid grid-cols-3 text-center items-center font-semibold text-xs sm:text-base';
+                resultDiv.innerHTML = `
+                    <span class="text-yellow-400">${place}</span>
+                    <span class="text-white">L${result.lane}</span>
+                    <span class="timer-display text-cyan-300">${result.timeString} </span>
+                `;
+                resultsContainer.appendChild(resultDiv);
+            });
+        }
+
+        // Start/Pause the stopwatch
+        function startPause() {
+            if (!running) {
+                startTime = new Date().getTime();
+                tInterval = setInterval(updateDisplay, 10);
+                running = true;
+                paused = false;
+                startPauseBtn.textContent = 'Pause';
+                startPauseBtn.classList.replace('bg-green-500', 'bg-yellow-500');
+                startPauseBtn.classList.replace('hover:bg-green-600', 'hover:bg-yellow-600');
+            } else if (!paused) {
+                clearInterval(tInterval);
+                timeOffset += new Date().getTime() - startTime;
+                paused = true;
+                startPauseBtn.textContent = 'Resume';
+                startPauseBtn.classList.replace('bg-yellow-500', 'bg-blue-500');
+                startPauseBtn.classList.replace('hover:bg-yellow-600', 'hover:bg-blue-600');
+            } else {
+                startTime = new Date().getTime();
+                tInterval = setInterval(updateDisplay, 10);
+                paused = false;
+                startPauseBtn.textContent = 'Pause';
+                startPauseBtn.classList.replace('bg-blue-500', 'bg-yellow-500');
+                startPauseBtn.classList.replace('hover:bg-blue-600', 'hover:bg-yellow-600');
+            }
+        }
+
+        // Reset the stopwatch and all data
+        function reset() {
+            clearInterval(tInterval);
+            running = false;
+            paused = false;
+            difference = 0;
+            timeOffset = 0;
+            results = [];
+            stopwatchDisplay.textContent = '00:00.00';
+            startPauseBtn.textContent = 'Start';
+            startPauseBtn.className = 'btn w-24 md:w-32 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 sm:px-6 rounded-lg text-base sm:text-lg';
+            
+            resultsContainer.innerHTML = '';
+            voiceTranscriptDisplay.textContent = '...';
+            syllableDisplay.innerHTML = '';
+            voiceTranscriptContainer.classList.add('hidden');
+            
+            // Reset all visible lanes
+            const allLaneButtons = lanesContainer.querySelectorAll('button[id^="laneBtn"]');
+            allLaneButtons.forEach(button => {
+                const laneNumber = parseInt(button.id.replace('laneBtn', ''));
+                document.getElementById(`laneTime${laneNumber}`).textContent = '00:00.00';
+                button.disabled = false;
+                button.classList.remove('bg-gray-500', 'hover:bg-gray-500');
+                button.classList.add('bg-indigo-500', 'hover:bg-indigo-600');
+            });
+        }
+
+        // Record time for a specific lane
+        function recordLaneTime(laneNumber) {
+            if (running && !paused) {
+                const formattedTime = formatTime(difference);
+                document.getElementById(`laneTime${laneNumber}`).textContent = formattedTime;
+
+                const laneButton = document.getElementById(`laneBtn${laneNumber}`);
+                laneButton.disabled = true;
+                laneButton.classList.replace('bg-indigo-500', 'bg-gray-500');
+                laneButton.classList.replace('hover:bg-indigo-600', 'hover:bg-gray-500');
+
+                results.push({ lane: laneNumber, time: difference, timeString: formattedTime });
+                updateResultsDisplay();
+            }
+        }
+
+        // --- Voice Recognition Functions ---
+        function handleVoiceCommand(transcript) {
+            const cleanedTranscript = transcript.toLowerCase().trim();
+            if (!cleanedTranscript) return;
+
+            const words = cleanedTranscript.split(' ');
+            
+            const numberMap = {
+                'zero': 0, 'hero': 0, 'ze': 0,
+                'one': 1, 'won': 1, 'wa': 1,
+                'two': 2, 'to': 2, 'too': 2, 'tu': 2,
+                'three': 3, 'tree': 3,
+                'four': 4, 'for': 4, 'fore': 4, 'po': 4, 'fo': 4,
+                'five': 5, 'pipe': 5, 'pa': 5, 'fa': 5,
+                'six': 6, 'sex': 6, 'si': 6,
+                'seven': 7, 'se': 7,
+                'eight': 8, 'ate': 8, 'e': 8,
+                'nine': 9, 'line': 9, 'na': 9,
+                'ten': 10, 'eleven': 11, 'twelve': 12, 'thirteen': 13, 'fourteen': 14,
+                'fifteen': 15, 'sixteen': 16, 'seventeen': 17, 'eighteen': 18,
+                'nineteen': 19, 'twenty': 20
+            };
+
+            for (const word of words) {
+                let numberFound = -1;
+
+                if (!isNaN(parseInt(word))) {
+                    numberFound = parseInt(word);
+                } else if (numberMap.hasOwnProperty(word)) {
+                    numberFound = numberMap[word];
+                }
+
+                if (numberFound !== -1) {
+                    const digits = String(numberFound).split(''); // "123" -> ["1", "2", "3"] or 10 -> ["1", "0"]
+                    for (const digit of digits) {
+                        const laneNumber = parseInt(digit);
+                        const laneButton = document.getElementById(`laneBtn${laneNumber}`);
+                        if (laneButton && !laneButton.disabled) {
+                            laneButton.click();
+                        }
+                    }
+                }
+            }
+        }
+
+        function toggleVoiceRecognition() {
+            if (!recognition) {
+                voiceControlBtn.textContent = 'Unsupported';
+                voiceControlBtn.disabled = true;
+                return;
+            }
+
+            isListening = !isListening;
+            if (isListening) {
+                recognition.start();
+                voiceControlBtn.textContent = 'Listening...';
+                voiceControlBtn.classList.add('bg-green-600', 'listening');
+                voiceControlBtn.classList.remove('bg-gray-600');
+                voiceTranscriptContainer.classList.remove('hidden');
+            } else {
+                recognition.stop();
+                voiceControlBtn.textContent = 'Voice';
+                voiceControlBtn.classList.remove('bg-green-600', 'listening');
+                voiceControlBtn.classList.add('bg-gray-600');
+                voiceTranscriptContainer.classList.add('hidden');
+            }
+        }
+
+        function setupVoiceRecognition() {
+            if (!recognition) return;
+
+            recognition.continuous = true;
+            recognition.lang = 'en-US';
+            recognition.interimResults = true;
+            recognition.maxAlternatives = 1;
+
+            let lastTranscript = '';
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+                
+                voiceTranscriptDisplay.textContent = interimTranscript;
+                
+                const newPart = interimTranscript.replace(lastTranscript, '').trim();
+                if (newPart) {
+                    handleVoiceCommand(newPart);
+                    
+                    syllableDisplay.innerHTML = ''; // Clear previous
+                    const words = interimTranscript.split(' ');
+                    words.forEach((word, index) => {
+                        const wordSpan = document.createElement('span');
+                        wordSpan.textContent = word;
+                        wordSpan.className = 'bg-gray-600 px-2 py-1 rounded';
+                        if (index === words.length - 1) {
+                            wordSpan.classList.add('highlight-word');
+                        }
+                        syllableDisplay.appendChild(wordSpan);
+                    });
+                }
+
+                if (event.results[event.results.length - 1].isFinal) {
+                    lastTranscript = ''; // Reset after a final result
+                } else {
+                    lastTranscript = interimTranscript;
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                    isListening = false;
+                    voiceControlBtn.textContent = 'Blocked';
+                    voiceControlBtn.disabled = true;
+                    voiceTranscriptContainer.classList.add('hidden');
+                }
+            };
+
+            recognition.onend = () => {
+                if (isListening) {
+                    recognition.start();
+                } else {
+                    voiceControlBtn.textContent = 'Voice';
+                    voiceControlBtn.classList.remove('bg-green-600', 'listening');
+                    voiceControlBtn.classList.add('bg-gray-600');
+                    voiceTranscriptContainer.classList.add('hidden');
+                }
+            };
+        }
+
+
+        // Initial setup on page load
+        function initializeApp() {
+            lanesContainer.innerHTML = '';
+            const initialLaneCount = 8;
+            for(let i = 0; i < initialLaneCount; i++) {
+                addLane();
+            }
+            updateLaneButtonsState();
+            setupVoiceRecognition();
+        }
+
+        // Event Listeners
+        startPauseBtn.addEventListener('click', startPause);
+        resetBtn.addEventListener('click', reset);
+        addLaneBtn.addEventListener('click', addLane);
+        removeLaneBtn.addEventListener('click', removeLane);
+        toggleLaneZeroBtn.addEventListener('click', toggleLaneZero);
+        voiceControlBtn.addEventListener('click', toggleVoiceRecognition);
+
+        window.onload = initializeApp;
+
+    </script>
+
+</body>
+</html>
