@@ -186,6 +186,17 @@
             }
 
             filteredParticipants.forEach((p, index) => {
+                // Check if a new heat is starting
+                if (index % lanesPerHeat === 0) {
+                    const heatNumber = Math.floor(index / lanesPerHeat) + 1;
+                    const heatHeaderRow = `
+                        <tr class="bg-gray-200 font-semibold">
+                            <td colspan="5" class="px-6 py-2 text-gray-800">Heat ${heatNumber}</td>
+                        </tr>
+                    `;
+                    resultsBody.innerHTML += heatHeaderRow;
+                }
+
                 const laneNumber = (index % lanesPerHeat) + startLane;
                 const seedTime = getEventTime(p, selectedEvent) || '---';
                 const row = `
@@ -198,11 +209,6 @@
                     </tr>
                 `;
                 resultsBody.innerHTML += row;
-
-                if ((index + 1) % lanesPerHeat === 0 && index < filteredParticipants.length - 1) {
-                    const breakRow = `<tr class="bg-blue-100"><td colspan="5" class="px-6 py-1 text-center text-xs font-semibold text-blue-800 uppercase">Next Heat</td></tr>`;
-                    resultsBody.innerHTML += breakRow;
-                }
             });
         }
         
