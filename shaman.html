@@ -74,13 +74,14 @@
                 <div class="filter-block border-t-4 border-blue-500 pt-4" data-id="${blockId}">
                     <!-- Filter Controls -->
                     <div id="filters-container-${blockId}" class="bg-white p-6 rounded-xl shadow-md mb-8">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 items-end">
-                            <h2 class="text-xl font-semibold text-gray-700 col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-6">Filter & Sort Results #${blockId}</h2>
-                            <div><label for="teamFilter-${blockId}" class="block text-sm font-medium text-gray-700">Team</label><select id="teamFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Teams</option></select></div>
-                            <div><label for="genderFilter-${blockId}" class="block text-sm font-medium text-gray-700">Gender</label><select id="genderFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Genders</option></select></div>
-                            <div><label for="eventFilter-${blockId}" class="block text-sm font-medium text-gray-700">Event</label><select id="eventFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Events</option></select></div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6 items-end">
+                            <h2 class="text-xl font-semibold text-gray-700 col-span-full">Filter & Sort Results #${blockId}</h2>
+                            <div class="lg:col-span-2"><label for="teamFilter-${blockId}" class="block text-sm font-medium text-gray-700">Team</label><select id="teamFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Teams</option></select></div>
+                            <div class="lg:col-span-2"><label for="genderFilter-${blockId}" class="block text-sm font-medium text-gray-700">Gender</label><select id="genderFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Genders</option></select></div>
+                            <div class="lg:col-span-2"><label for="eventFilter-${blockId}" class="block text-sm font-medium text-gray-700">Event</label><select id="eventFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Events</option></select></div>
                             <div class="lg:col-span-2"><label class="block text-sm font-medium text-gray-700">Age Range</label><div class="flex items-center space-x-2 mt-1"><input type="number" id="ageMinFilter-${blockId}" placeholder="Min" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><span class="text-gray-500">-</span><input type="number" id="ageMaxFilter-${blockId}" placeholder="Max" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div></div>
-                            <div><label for="timeSortFilter-${blockId}" class="block text-sm font-medium text-gray-700">Sort by Time</label><select id="timeSortFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="none">Default (Name)</option><option value="asc">Ascending</option><option value="desc">Descending</option></select></div>
+                            <div class="lg:col-span-2"><label class="block text-sm font-medium text-gray-700">Lane Range</label><div class="flex items-center space-x-2 mt-1"><input type="number" id="startLaneFilter-${blockId}" value="1" placeholder="Start" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><span class="text-gray-500">-</span><input type="number" id="endLaneFilter-${blockId}" value="4" placeholder="End" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div></div>
+                            <div class="lg:col-span-2"><label for="timeSortFilter-${blockId}" class="block text-sm font-medium text-gray-700">Sort by Time</label><select id="timeSortFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="none">Default (Name)</option><option value="asc">Ascending</option><option value="desc">Descending</option></select></div>
                             <div class="col-span-full"><button id="resetFilters-${blockId}" class="w-full sm:w-auto sm:float-right bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-md transition">Reset Filters</button></div>
                         </div>
                     </div>
@@ -112,8 +113,10 @@
             block.querySelector(`#resetFilters-${blockId}`).addEventListener('click', () => {
                 block.querySelectorAll('.filter-input').forEach(input => {
                     if (input.tagName === 'SELECT') input.value = 'all';
-                    if (input.tagName === 'INPUT') input.value = '';
+                    if (input.tagName === 'INPUT' && !input.id.includes('Lane')) input.value = '';
                     if (input.id.includes('timeSortFilter')) input.value = 'none';
+                    if (input.id.includes('startLaneFilter')) input.value = '1';
+                    if (input.id.includes('endLaneFilter')) input.value = '4';
                 });
                 renderParticipants(blockId);
             });
@@ -146,6 +149,11 @@
             const sortOrder = document.getElementById(`timeSortFilter-${blockId}`).value;
             const resultsBody = document.getElementById(`resultsBody-${blockId}`);
             
+            let startLane = parseInt(document.getElementById(`startLaneFilter-${blockId}`).value, 10) || 1;
+            let endLane = parseInt(document.getElementById(`endLaneFilter-${blockId}`).value, 10) || startLane + 3;
+            if (endLane < startLane) endLane = startLane;
+            const lanesPerHeat = (endLane - startLane) + 1;
+
             let filteredParticipants = allParticipants.filter(p => {
                 const teamMatch = selectedTeam === 'all' || p.team === selectedTeam;
                 const genderMatch = selectedGender === 'all' || p.gender === selectedGender;
@@ -170,7 +178,7 @@
             }
 
             filteredParticipants.forEach((p, index) => {
-                const laneNumber = (index % 4) + 1;
+                const laneNumber = (index % lanesPerHeat) + startLane;
                 const seedTime = getEventTime(p, selectedEvent) || '---';
                 const row = `
                     <tr class="hover:bg-gray-50 transition-colors duration-200">
@@ -183,7 +191,7 @@
                 `;
                 resultsBody.innerHTML += row;
 
-                if (laneNumber === 4 && index < filteredParticipants.length - 1) {
+                if ((index + 1) % lanesPerHeat === 0 && index < filteredParticipants.length - 1) {
                     const breakRow = `<tr class="bg-blue-100"><td colspan="5" class="px-6 py-1 text-center text-xs font-semibold text-blue-800 uppercase">Next Heat</td></tr>`;
                     resultsBody.innerHTML += breakRow;
                 }
