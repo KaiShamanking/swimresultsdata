@@ -69,9 +69,8 @@
             const newBlockHTML = `
                 <div class="filter-block border-t-4 border-blue-500 pt-4" data-id="${blockId}">
                     <div id="filters-container-${blockId}" class="bg-white p-6 rounded-xl shadow-md mb-8">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 items-end">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
                             <h2 class="text-xl font-semibold text-gray-700 col-span-full">Filter & Sort Results #${blockId}</h2>
-                            <div class="lg:col-span-1"><label for="teamFilter-${blockId}" class="block text-sm font-medium text-gray-700">Team</label><select id="teamFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Teams</option></select></div>
                             <div class="lg:col-span-1"><label for="genderFilter-${blockId}" class="block text-sm font-medium text-gray-700">Gender</label><select id="genderFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Genders</option></select></div>
                             <div class="lg:col-span-1"><label for="eventFilter-${blockId}" class="block text-sm font-medium text-gray-700">Event</label><select id="eventFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Events</option></select></div>
                             <div class="lg:col-span-1"><label class="block text-sm font-medium text-gray-700">Age Range</label><div class="flex items-center space-x-2 mt-1"><input type="number" id="ageMinFilter-${blockId}" placeholder="Min" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><span class="text-gray-500">-</span><input type="number" id="ageMaxFilter-${blockId}" placeholder="Max" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div></div>
@@ -159,7 +158,6 @@
         }
 
         function renderParticipants(blockId) {
-            const selectedTeam = document.getElementById(`teamFilter-${blockId}`).value;
             const selectedGender = document.getElementById(`genderFilter-${blockId}`).value;
             const selectedEvent = document.getElementById(`eventFilter-${blockId}`).value;
             const minAge = document.getElementById(`ageMinFilter-${blockId}`).value;
@@ -167,11 +165,10 @@
             const resultsBody = document.getElementById(`resultsBody-${blockId}`);
             
             let filteredParticipants = allParticipants.filter(p => {
-                const teamMatch = selectedTeam === 'all' || p.team === selectedTeam;
                 const genderMatch = selectedGender === 'all' || p.gender === selectedGender;
                 const eventMatch = selectedEvent === 'all' || (p.events && Array.isArray(p.events) && p.events.some(e => e.event === selectedEvent));
                 const ageMatch = (!minAge || p.age >= minAge) && (!maxAge || p.age <= maxAge);
-                return teamMatch && genderMatch && eventMatch && ageMatch;
+                return genderMatch && eventMatch && ageMatch;
             });
 
             const useSpecialSeeding = selectedEvent !== 'all';
@@ -309,11 +306,9 @@
         }
 
         function populateFiltersForBlock(blockId) {
-            const teams = [...new Set(allParticipants.map(p => p.team))].sort();
             const genders = [...new Set(allParticipants.map(p => p.gender).filter(g => g))].sort();
             const events = [...new Set(allParticipants.flatMap(p => (p.events && Array.isArray(p.events)) ? p.events.map(e => e.event) : []))].sort();
 
-            populateSelectFilter(document.getElementById(`teamFilter-${blockId}`), teams, 'All Teams');
             populateSelectFilter(document.getElementById(`genderFilter-${blockId}`), genders, 'All Genders');
             populateSelectFilter(document.getElementById(`eventFilter-${blockId}`), events, 'All Events');
         }
