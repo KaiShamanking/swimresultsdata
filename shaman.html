@@ -185,6 +185,8 @@
                  resultsBody.innerHTML = `<tr><td colspan="5" class="text-center p-4 text-gray-500">No participants match filters.</td></tr>`;
             }
 
+            const laneSeedOrder = [4, 5, 3, 6, 2, 7, 1, 8, 0, 9];
+
             filteredParticipants.forEach((p, index) => {
                 // Check if a new heat is starting
                 if (index % lanesPerHeat === 0) {
@@ -196,8 +198,23 @@
                     `;
                     resultsBody.innerHTML += heatHeaderRow;
                 }
+                
+                let laneNumber;
+                const indexInHeat = index % lanesPerHeat;
 
-                const laneNumber = (index % lanesPerHeat) + startLane;
+                // Apply special seeding if sorting by time and an event is selected
+                if (sortOrder !== 'none' && selectedEvent !== 'all') {
+                    if (indexInHeat < laneSeedOrder.length) {
+                        laneNumber = laneSeedOrder[indexInHeat];
+                    } else {
+                        // Fallback for heats larger than the defined seed pattern
+                        laneNumber = `? (${indexInHeat + 1})`;
+                    }
+                } else {
+                    // Otherwise, use the standard sequential numbering
+                    laneNumber = indexInHeat + startLane;
+                }
+
                 const seedTime = getEventTime(p, selectedEvent) || '---';
                 const row = `
                     <tr class="hover:bg-gray-50 transition-colors duration-200">
