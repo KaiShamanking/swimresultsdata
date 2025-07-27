@@ -14,7 +14,6 @@
 </head>
 <body class="bg-gray-50">
 
-    <!-- Control Buttons -->
     <div class="fixed top-4 right-4 z-10 flex space-x-2">
         <button id="add-container-btn" class="bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center text-2xl font-bold shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">+</button>
         <button id="remove-container-btn" class="bg-red-600 text-white rounded-full w-10 h-10 flex items-center justify-center text-2xl font-bold shadow-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition">-</button>
@@ -26,17 +25,14 @@
             <p class="mt-2 text-gray-600">Add or remove filter blocks to compare results.</p>
         </div>
 
-        <!-- This is where the filter/result blocks will be dynamically added -->
         <div id="main-content-area" class="space-y-8"></div>
         
-        <!-- Loading / No Results Message -->
         <div id="statusMessage" class="text-center py-10 text-gray-500">
             <p>Loading participants...</p>
         </div>
 
     </div>
 
-    <!-- Firebase SDK -->
     <script type="module">
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -72,7 +68,6 @@
 
             const newBlockHTML = `
                 <div class="filter-block border-t-4 border-blue-500 pt-4" data-id="${blockId}">
-                    <!-- Filter Controls -->
                     <div id="filters-container-${blockId}" class="bg-white p-6 rounded-xl shadow-md mb-8">
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 items-end">
                             <h2 class="text-xl font-semibold text-gray-700 col-span-full">Filter & Sort Results #${blockId}</h2>
@@ -84,7 +79,6 @@
                             <div class="col-span-full"><button id="resetFilters-${blockId}" class="w-full sm:w-auto sm:float-right bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-md transition">Reset Filters</button></div>
                         </div>
                     </div>
-                    <!-- Results Table -->
                     <div id="tableContainer-${blockId}" class="bg-white rounded-xl shadow-md overflow-hidden">
                         <table class="min-w-full"><thead class="bg-gray-50"><tr><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lane</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seed Time</th></tr></thead><tbody id="resultsBody-${blockId}" class="bg-white"></tbody></table>
                     </div>
@@ -121,6 +115,31 @@
         }
 
         // --- Core Logic (now modular) ---
+
+        /**
+         * Generates a center-out lane assignment order based on a start and end lane.
+         * e.g., for lanes 1-8, it returns [4, 5, 3, 6, 2, 7, 1, 8].
+         * @param {number} start The starting lane number.
+         * @param {number} end The ending lane number.
+         * @returns {number[]} An array of lane numbers in seeded order.
+         */
+        function generateSeedOrder(start, end) {
+            if (start > end) return [];
+            
+            let availableLanes = [];
+            for (let i = start; i <= end; i++) {
+                availableLanes.push(i);
+            }
+
+            const seededOrder = [];
+            while (availableLanes.length > 0) {
+                // Find and remove the lane from the middle of the remaining array
+                const middleIndex = Math.floor((availableLanes.length - 1) / 2);
+                const nextLane = availableLanes.splice(middleIndex, 1)[0];
+                seededOrder.push(nextLane);
+            }
+            return seededOrder;
+        }
 
         function parseTime(timeString) {
             if (!timeString || typeof timeString !== 'string' || timeString.toUpperCase() === 'NT') return Infinity;
@@ -161,7 +180,7 @@
 
             // Sort by time first if an event is selected
             if (useSpecialSeeding) {
-                // Sorts slowest to fastest
+                // Sorts slowest to fastest to prepare for bottom-up heat creation
                 filteredParticipants.sort((a, b) => parseTime(getEventTime(b, selectedEvent)) - parseTime(getEventTime(a, selectedEvent)));
             } else {
                  // Default sort by name
@@ -182,12 +201,11 @@
             if (endLane < startLane) endLane = startLane;
 
             if (useSpecialSeeding) {
-                const masterLaneSeedOrder = [4, 5, 3, 6, 2, 7, 1, 8, 0, 9];
-                const activeLaneSeedOrder = masterLaneSeedOrder.filter(lane => lane >= startLane && lane <= endLane);
+                const activeLaneSeedOrder = generateSeedOrder(startLane, endLane);
                 
                 let lanesPerHeat = activeLaneSeedOrder.length;
                 if (lanesPerHeat === 0) {
-                     resultsBody.innerHTML = `<tr><td colspan="5" class="text-center p-4 text-gray-500">The selected lane range is not valid for special seeding.</td></tr>`;
+                     resultsBody.innerHTML = `<tr><td colspan="5" class="text-center p-4 text-gray-500">The selected lane range is not valid. Start lane must be less than or equal to end lane.</td></tr>`;
                      return;
                 }
 
@@ -198,7 +216,7 @@
                     swimmersInFirstHeat = lanesPerHeat;
                 }
                 
-                // Original "bottom-up" logic
+                // Bottom-up heat creation (slowest heat first)
                 if (swimmersInFirstHeat > 0) {
                     heats.push(filteredParticipants.slice(0, swimmersInFirstHeat));
                 }
@@ -210,6 +228,7 @@
                 // Process the generated heats for display
                 heats.forEach((heatChunk, heatIndex) => {
                     const heatNumber = heatIndex + 1;
+                    // Sort this specific heat from fastest to slowest to match the seeded lane order
                     heatChunk.sort((a, b) => parseTime(getEventTime(a, selectedEvent)) - parseTime(getEventTime(b, selectedEvent)));
 
                     const heatDisplayData = heatChunk.map((participant, indexInHeat) => ({
@@ -218,12 +237,14 @@
                         displayLane: activeLaneSeedOrder[indexInHeat],
                     }));
                     
+                    // Find any empty lanes to display
                     const usedLanes = heatDisplayData.map(p => p.displayLane);
                     const unusedLanes = activeLaneSeedOrder.filter(lane => !usedLanes.includes(lane));
                     unusedLanes.forEach(lane => {
                         heatDisplayData.push({ isEmpty: true, displayHeat: heatNumber, displayLane: lane });
                     });
 
+                    // Sort the final heat data by lane number for correct table rendering
                     heatDisplayData.sort((a, b) => a.displayLane - b.displayLane);
                     displayData.push(...heatDisplayData);
                 });
@@ -303,8 +324,7 @@
         }
 
         function populateFiltersForBlock(blockId) {
-            // Remove alphabetical sort for teams
-            const teams = [...new Set(allParticipants.map(p => p.team))];
+            const teams = [...new Set(allParticipants.map(p => p.team))].sort();
             const genders = [...new Set(allParticipants.map(p => p.gender).filter(g => g))].sort();
             const events = [...new Set(allParticipants.flatMap(p => (p.events && Array.isArray(p.events)) ? p.events.map(e => e.event) : []))].sort();
 
