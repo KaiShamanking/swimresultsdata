@@ -161,8 +161,8 @@
 
             // Sort by time first if an event is selected
             if (useSpecialSeeding) {
-                // Ascending sort puts fastest times first. Then reverse for slowest-to-fastest heats.
-                filteredParticipants.sort((a, b) => parseTime(getEventTime(a, selectedEvent)) - parseTime(getEventTime(b, selectedEvent))).reverse();
+                // Sorts slowest to fastest
+                filteredParticipants.sort((a, b) => parseTime(getEventTime(b, selectedEvent)) - parseTime(getEventTime(a, selectedEvent)));
             } else {
                  // Default sort by name
                  filteredParticipants.sort((a, b) => a.name.localeCompare(b.name));
@@ -175,36 +175,53 @@
             }
 
             let displayData = [];
+            let lanesPerHeat;
 
             if (useSpecialSeeding) {
                 const laneSeedOrder = [4, 5, 3, 6, 2, 7, 1, 8, 0, 9];
-                const lanesPerHeat = laneSeedOrder.length;
+                lanesPerHeat = laneSeedOrder.length;
+                const totalSwimmers = filteredParticipants.length;
+                const swimmersInFirstHeat = totalSwimmers % lanesPerHeat;
+                const fullHeatsStartAt = swimmersInFirstHeat === 0 ? 0 : swimmersInFirstHeat;
 
-                // Process participants in chunks corresponding to heats
-                for (let i = 0; i < filteredParticipants.length; i += lanesPerHeat) {
-                    // Get the swimmers for the current heat
-                    let heatChunk = filteredParticipants.slice(i, i + lanesPerHeat);
-                    const heatNumber = Math.floor(i / lanesPerHeat) + 1;
+                // Process the first, potentially partial heat
+                if (swimmersInFirstHeat > 0) {
+                    let heatChunk = filteredParticipants.slice(0, swimmersInFirstHeat);
+                    heatChunk.sort((a, b) => parseTime(getEventTime(a, selectedEvent)) - parseTime(getEventTime(b, selectedEvent))); // Sort this chunk fastest to slowest
 
-                    // The overall list is already sorted slowest to fastest.
-                    // To seed within the heat (fastest gets lane 4), we need to sort this specific chunk.
-                    // The current `heatChunk` is already sorted slowest to fastest relative to its members.
-                    // So we reverse it to get fastest to slowest for seeding.
-                    heatChunk.reverse();
-
-                    // Assign lanes to swimmers within this heat based on their rank in the heat
-                    const heatDisplayData = heatChunk.map((participant, indexInHeat) => {
-                        return {
-                            ...participant,
-                            displayHeat: heatNumber,
-                            displayLane: laneSeedOrder[indexInHeat],
-                        };
+                    const heatDisplayData = heatChunk.map((participant, indexInHeat) => ({
+                        ...participant,
+                        displayHeat: 1,
+                        displayLane: laneSeedOrder[indexInHeat],
+                    }));
+                    
+                    // Add empty lanes to the first heat
+                    const usedLanes = heatDisplayData.map(p => p.displayLane);
+                    const unusedLanes = laneSeedOrder.filter(lane => !usedLanes.includes(lane));
+                    unusedLanes.forEach(lane => {
+                        heatDisplayData.push({ isEmpty: true, displayHeat: 1, displayLane: lane });
                     });
 
-                    // Now, sort this heat by lane number for correct display order
                     heatDisplayData.sort((a, b) => a.displayLane - b.displayLane);
+                    displayData.push(...heatDisplayData);
+                }
 
-                    // Add the correctly ordered heat to the final display list
+                // Process the remaining full heats
+                const fullHeatsSwimmers = filteredParticipants.slice(fullHeatsStartAt);
+                const numFullHeats = Math.floor(fullHeatsSwimmers.length / lanesPerHeat);
+                
+                for (let i = 0; i < numFullHeats; i++) {
+                    let heatChunk = fullHeatsSwimmers.slice(i * lanesPerHeat, (i + 1) * lanesPerHeat);
+                    const heatNumber = (swimmersInFirstHeat > 0 ? 1 : 0) + i + 1;
+                    heatChunk.sort((a, b) => parseTime(getEventTime(a, selectedEvent)) - parseTime(getEventTime(b, selectedEvent))); // Sort this chunk fastest to slowest
+
+                    const heatDisplayData = heatChunk.map((participant, indexInHeat) => ({
+                        ...participant,
+                        displayHeat: heatNumber,
+                        displayLane: laneSeedOrder[indexInHeat],
+                    }));
+
+                    heatDisplayData.sort((a, b) => a.displayLane - b.displayLane);
                     displayData.push(...heatDisplayData);
                 }
 
@@ -215,7 +232,7 @@
                 let endLane = parseInt(document.getElementById(`endLaneFilter-${blockId}`).value, 10);
                 if (isNaN(endLane)) endLane = 9;
                 if (endLane < startLane) endLane = startLane;
-                const lanesPerHeat = (endLane - startLane) + 1;
+                lanesPerHeat = (endLane - startLane) + 1;
 
                 filteredParticipants.forEach((participant, index) => {
                     displayData.push({
@@ -238,15 +255,26 @@
                     resultsBody.innerHTML += heatHeaderRow;
                     lastHeatRendered = p.displayHeat;
                 }
+                
+                if (p.isEmpty) {
+                    const row = `
+                        <tr class="hover:bg-gray-50 h-12">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">${p.displayLane}</td>
+                            <td class="px-6 py-4"></td><td class="px-6 py-4"></td><td class="px-6 py-4"></td><td class="px-6 py-4"></td>
+                        </tr>
+                    `;
+                    resultsBody.innerHTML += row;
+                    return;
+                }
 
                 const rawSeedTime = getEventTime(p, selectedEvent);
                 let seedTime;
                 if (rawSeedTime === null) {
-                    seedTime = '---'; // No event selected or swimmer not in event
+                    seedTime = '---';
                 } else if (parseTime(rawSeedTime) === Infinity) {
-                    seedTime = 'NT'; // No time or zero time
+                    seedTime = 'NT';
                 } else {
-                    seedTime = rawSeedTime; // Valid time
+                    seedTime = rawSeedTime;
                 }
 
                 const row = `
