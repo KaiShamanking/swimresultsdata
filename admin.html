@@ -14,18 +14,23 @@
 </head>
 <body class="bg-gray-50">
 
-    <div class="fixed top-4 right-4 z-10 flex space-x-2">
-        <button id="add-container-btn" class="bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center text-2xl font-bold shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">+</button>
-        <button id="remove-container-btn" class="bg-red-600 text-white rounded-full w-10 h-10 flex items-center justify-center text-2xl font-bold shadow-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition">-</button>
-    </div>
-
     <div class="container mx-auto p-4 sm:p-6 lg:p-8">
         <div class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-gray-800">Swim Participants</h1>
-            <p class="mt-2 text-gray-600">Add or remove filter blocks to compare results.</p>
+            <h1 class="text-4xl font-bold text-gray-800">Swim Meet Heat Sheet</h1>
+            <p class="mt-2 text-gray-600">Global filters for the entire meet are below.</p>
         </div>
 
-        <div id="main-content-area" class="space-y-8"></div>
+        <!-- Global Filters -->
+        <div id="global-filters-container" class="bg-white p-6 rounded-xl shadow-md mb-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
+                <h2 class="text-xl font-semibold text-gray-700 col-span-full">Global Filters</h2>
+                <div class="lg:col-span-2"><label class="block text-sm font-medium text-gray-700">Age Range</label><div class="flex items-center space-x-2 mt-1"><input type="number" id="globalAgeMinFilter" placeholder="Min" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><span class="text-gray-500">-</span><input type="number" id="globalAgeMaxFilter" placeholder="Max" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div></div>
+                <div class="lg:col-span-2"><label class="block text-sm font-medium text-gray-700">Lane Range</label><div class="flex items-center space-x-2 mt-1"><input type="number" id="globalStartLaneFilter" value="1" placeholder="Start" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><span class="text-gray-500">-</span><input type="number" id="globalEndLaneFilter" value="8" placeholder="End" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div></div>
+                <div class="col-span-full"><button id="resetGlobalFilters" class="w-full sm:w-auto sm:float-right bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-md transition">Reset Filters</button></div>
+            </div>
+        </div>
+
+        <div id="main-content-area" class="space-y-12"></div>
         
         <div id="statusMessage" class="text-center py-10 text-gray-500">
             <p>Loading participants...</p>
@@ -56,68 +61,13 @@
         setLogLevel('error');
 
         let allParticipants = [];
-        let containerIdCounter = 0;
         const mainContentArea = document.getElementById('main-content-area');
         const statusMessage = document.getElementById('statusMessage');
 
-        // --- Dynamic Block Creation ---
-
-        function addFilterBlock() {
-            containerIdCounter++;
-            const blockId = containerIdCounter;
-
-            const newBlockHTML = `
-                <div class="filter-block border-t-4 border-blue-500 pt-4" data-id="${blockId}">
-                    <div id="filters-container-${blockId}" class="bg-white p-6 rounded-xl shadow-md mb-8">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
-                            <h2 class="text-xl font-semibold text-gray-700 col-span-full">Filter & Sort Results #${blockId}</h2>
-                            <div class="lg:col-span-1"><label for="genderFilter-${blockId}" class="block text-sm font-medium text-gray-700">Gender</label><select id="genderFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Genders</option></select></div>
-                            <div class="lg:col-span-1"><label for="eventFilter-${blockId}" class="block text-sm font-medium text-gray-700">Event</label><select id="eventFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Events</option></select></div>
-                            <div class="lg:col-span-1"><label class="block text-sm font-medium text-gray-700">Age Range</label><div class="flex items-center space-x-2 mt-1"><input type="number" id="ageMinFilter-${blockId}" placeholder="Min" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><span class="text-gray-500">-</span><input type="number" id="ageMaxFilter-${blockId}" placeholder="Max" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div></div>
-                            <div class="lg:col-span-1"><label class="block text-sm font-medium text-gray-700">Lane Range</label><div class="flex items-center space-x-2 mt-1"><input type="number" id="startLaneFilter-${blockId}" value="0" placeholder="Start" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><span class="text-gray-500">-</span><input type="number" id="endLaneFilter-${blockId}" value="9" placeholder="End" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div></div>
-                            <div class="col-span-full"><button id="resetFilters-${blockId}" class="w-full sm:w-auto sm:float-right bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-md transition">Reset Filters</button></div>
-                        </div>
-                    </div>
-                    <div id="tableContainer-${blockId}" class="bg-white rounded-xl shadow-md overflow-hidden">
-                        <table class="min-w-full"><thead class="bg-gray-50"><tr><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lane</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seed Time</th></tr></thead><tbody id="resultsBody-${blockId}" class="bg-white"></tbody></table>
-                    </div>
-                </div>
-            `;
-            mainContentArea.insertAdjacentHTML('beforeend', newBlockHTML);
-            attachEventListenersToBlock(blockId);
-            populateFiltersForBlock(blockId);
-            renderParticipants(blockId);
-        }
-
-        function removeFilterBlock() {
-            const allBlocks = document.querySelectorAll('.filter-block');
-            if (allBlocks.length > 0) {
-                allBlocks[allBlocks.length - 1].remove();
-            }
-        }
-
-        function attachEventListenersToBlock(blockId) {
-            const block = document.querySelector(`.filter-block[data-id='${blockId}']`);
-            block.querySelectorAll('.filter-input').forEach(input => {
-                input.addEventListener('change', () => renderParticipants(blockId));
-                input.addEventListener('input', () => renderParticipants(blockId));
-            });
-            block.querySelector(`#resetFilters-${blockId}`).addEventListener('click', () => {
-                block.querySelectorAll('.filter-input').forEach(input => {
-                    if (input.tagName === 'SELECT') input.value = 'all';
-                    if (input.tagName === 'INPUT' && !input.id.includes('Lane')) input.value = '';
-                    if (input.id.includes('startLaneFilter')) input.value = '0';
-                    if (input.id.includes('endLaneFilter')) input.value = '9';
-                });
-                renderParticipants(blockId);
-            });
-        }
-
-        // --- Core Logic (now modular) ---
+        // --- Core Logic ---
 
         /**
          * Generates a center-out lane assignment order based on a start and end lane.
-         * e.g., for lanes 1-8, it returns [4, 5, 3, 6, 2, 7, 1, 8].
          * @param {number} start The starting lane number.
          * @param {number} end The ending lane number.
          * @returns {number[]} An array of lane numbers in seeded order.
@@ -152,165 +102,159 @@
         }
 
         function getEventTime(participant, eventName) {
-            if (!participant.events || !Array.isArray(participant.events) || eventName === 'all') return null;
+            if (!participant.events || !Array.isArray(participant.events)) return null;
             const eventObj = participant.events.find(e => e.event === eventName);
             return eventObj ? eventObj.time : null;
         }
 
-        function renderParticipants(blockId) {
-            const selectedGender = document.getElementById(`genderFilter-${blockId}`).value;
-            const selectedEvent = document.getElementById(`eventFilter-${blockId}`).value;
-            const minAge = document.getElementById(`ageMinFilter-${blockId}`).value;
-            const maxAge = document.getElementById(`ageMaxFilter-${blockId}`).value;
-            const resultsBody = document.getElementById(`resultsBody-${blockId}`);
+        function renderFullReport() {
+            mainContentArea.innerHTML = ''; // Clear previous report
             
-            let filteredParticipants = allParticipants.filter(p => {
-                const genderMatch = selectedGender === 'all' || p.gender === selectedGender;
-                const eventMatch = selectedEvent === 'all' || (p.events && Array.isArray(p.events) && p.events.some(e => e.event === selectedEvent));
-                const ageMatch = (!minAge || p.age >= minAge) && (!maxAge || p.age <= maxAge);
-                return genderMatch && eventMatch && ageMatch;
-            });
-
-            const useSpecialSeeding = selectedEvent !== 'all';
-
-            if (useSpecialSeeding) {
-                filteredParticipants.sort((a, b) => parseTime(getEventTime(b, selectedEvent)) - parseTime(getEventTime(a, selectedEvent)));
-            } else {
-                 filteredParticipants.sort((a, b) => a.name.localeCompare(b.name));
-            }
-
-            resultsBody.innerHTML = '';
-            if (filteredParticipants.length === 0) {
-                 resultsBody.innerHTML = `<tr><td colspan="5" class="text-center p-4 text-gray-500">No participants match filters.</td></tr>`;
-                 return;
-            }
-
-            let displayData = [];
-            let startLane = parseInt(document.getElementById(`startLaneFilter-${blockId}`).value, 10);
-            if (isNaN(startLane)) startLane = 0;
-            let endLane = parseInt(document.getElementById(`endLaneFilter-${blockId}`).value, 10);
-            if (isNaN(endLane)) endLane = 9;
+            const minAge = document.getElementById('globalAgeMinFilter').value;
+            const maxAge = document.getElementById('globalAgeMaxFilter').value;
+            let startLane = parseInt(document.getElementById('globalStartLaneFilter').value, 10);
+            if (isNaN(startLane)) startLane = 1;
+            let endLane = parseInt(document.getElementById('globalEndLaneFilter').value, 10);
+            if (isNaN(endLane)) endLane = 8;
             if (endLane < startLane) endLane = startLane;
 
-            if (useSpecialSeeding) {
-                const activeLaneSeedOrder = generateSeedOrder(startLane, endLane);
-                const lanesPerHeat = activeLaneSeedOrder.length;
-                if (lanesPerHeat === 0) {
-                    resultsBody.innerHTML = `<tr><td colspan="5" class="text-center p-4 text-gray-500">The selected lane range is not valid. Start lane must be less than or equal to end lane.</td></tr>`;
-                    return;
-                }
+            const allEvents = [...new Set(allParticipants.flatMap(p => (p.events && Array.isArray(p.events)) ? p.events.map(e => e.event) : []))].sort();
 
-                let heats = [];
-                const totalSwimmers = filteredParticipants.length;
-                
-                const totalPotentialHeats = Math.ceil(totalSwimmers / lanesPerHeat);
-                const swimmersInFirstPotentialHeat = totalSwimmers % lanesPerHeat;
-
-                if (totalPotentialHeats >= 2 && swimmersInFirstPotentialHeat > 0) {
-                    const swimmersForTwoHeats = swimmersInFirstPotentialHeat + lanesPerHeat;
-                    const groupToReseed = filteredParticipants.slice(0, swimmersForTwoHeats);
-                    const newHeat1Size = Math.floor(swimmersForTwoHeats / 2);
+            allEvents.forEach(eventName => {
+                ['Male', 'Female'].forEach(gender => {
                     
-                    heats.push(groupToReseed.slice(0, newHeat1Size));
-                    heats.push(groupToReseed.slice(newHeat1Size));
+                    let filteredParticipants = allParticipants.filter(p => {
+                        const hasEvent = p.events && Array.isArray(p.events) && p.events.some(e => e.event === eventName);
+                        if (!hasEvent) return false;
 
-                    for (let i = swimmersForTwoHeats; i < totalSwimmers; i += lanesPerHeat) {
-                        heats.push(filteredParticipants.slice(i, i + lanesPerHeat));
-                    }
-                } else {
-                    for (let i = 0; i < totalSwimmers; i += lanesPerHeat) {
-                        heats.push(filteredParticipants.slice(i, i + lanesPerHeat));
-                    }
-                }
-
-                heats.forEach((heatChunk, heatIndex) => {
-                    const heatNumber = heatIndex + 1;
-                    heatChunk.sort((a, b) => parseTime(getEventTime(a, selectedEvent)) - parseTime(getEventTime(b, selectedEvent)));
-
-                    let heatDisplayData;
-                    const numSwimmers = heatChunk.length;
-
-                    // Swimmers get the best (center) lanes available. Empty lanes are the leftover outer ones.
-                    const swimmerLanes = activeLaneSeedOrder.slice(0, numSwimmers);
-                    const emptyLanes = activeLaneSeedOrder.slice(numSwimmers);
-
-                    // Assign swimmers to their seeded lanes
-                    heatDisplayData = heatChunk.map((participant, indexInHeat) => ({
-                        ...participant,
-                        displayHeat: heatNumber,
-                        displayLane: swimmerLanes[indexInHeat],
-                    }));
-
-                    // Add the leftover outer lanes as empty
-                    emptyLanes.forEach(lane => {
-                        heatDisplayData.push({ isEmpty: true, displayHeat: heatNumber, displayLane: lane });
+                        const genderMatch = p.gender === gender;
+                        const ageMatch = (!minAge || p.age >= minAge) && (!maxAge || p.age <= maxAge);
+                        
+                        return genderMatch && ageMatch;
                     });
+
+                    if (filteredParticipants.length === 0) {
+                        return; // Skip this event/gender combo if no one is in it
+                    }
+
+                    // Sort by seed time for heat generation
+                    filteredParticipants.sort((a, b) => parseTime(getEventTime(b, eventName)) - parseTime(getEventTime(a, eventName)));
+
+                    // --- Create container for this event group ---
+                    const eventContainer = document.createElement('div');
+                    eventContainer.className = 'event-group';
                     
-                    heatDisplayData.sort((a, b) => a.displayLane - b.displayLane);
-                    displayData.push(...heatDisplayData);
-                });
+                    const eventHeader = document.createElement('h2');
+                    eventHeader.className = 'text-2xl font-bold text-gray-800 mb-4 border-b-2 border-blue-500 pb-2';
+                    eventHeader.textContent = `${eventName} - ${gender}s`;
+                    eventContainer.appendChild(eventHeader);
+                    
+                    const tableContainer = document.createElement('div');
+                    tableContainer.className = 'bg-white rounded-xl shadow-md overflow-hidden';
+                    const table = document.createElement('table');
+                    table.className = 'min-w-full';
+                    table.innerHTML = `<thead class="bg-gray-50"><tr><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lane</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seed Time</th></tr></thead>`;
+                    const resultsBody = document.createElement('tbody');
+                    resultsBody.className = 'bg-white';
+                    table.appendChild(resultsBody);
+                    tableContainer.appendChild(table);
+                    eventContainer.appendChild(tableContainer);
+                    
+                    mainContentArea.appendChild(eventContainer);
 
-            } else {
-                const lanesPerHeat = (endLane - startLane) + 1;
-                filteredParticipants.forEach((participant, index) => {
-                    displayData.push({
-                        ...participant,
-                        displayHeat: Math.floor(index / lanesPerHeat) + 1,
-                        displayLane: (index % lanesPerHeat) + startLane,
+                    // --- Heat Generation and Seeding Logic ---
+                    const activeLaneSeedOrder = generateSeedOrder(startLane, endLane);
+                    const lanesPerHeat = activeLaneSeedOrder.length;
+                    if (lanesPerHeat === 0) {
+                        resultsBody.innerHTML = `<tr><td colspan="5" class="text-center p-4 text-red-500">Invalid lane range.</td></tr>`;
+                        return;
+                    }
+
+                    let heats = [];
+                    const totalSwimmers = filteredParticipants.length;
+                    const totalPotentialHeats = Math.ceil(totalSwimmers / lanesPerHeat);
+                    const swimmersInFirstPotentialHeat = totalSwimmers % lanesPerHeat;
+
+                    if (totalPotentialHeats >= 2 && swimmersInFirstPotentialHeat > 0) {
+                        const swimmersForTwoHeats = swimmersInFirstPotentialHeat + lanesPerHeat;
+                        const groupToReseed = filteredParticipants.slice(0, swimmersForTwoHeats);
+                        const newHeat1Size = Math.floor(swimmersForTwoHeats / 2);
+                        heats.push(groupToReseed.slice(0, newHeat1Size));
+                        heats.push(groupToReseed.slice(newHeat1Size));
+                        for (let i = swimmersForTwoHeats; i < totalSwimmers; i += lanesPerHeat) {
+                            heats.push(filteredParticipants.slice(i, i + lanesPerHeat));
+                        }
+                    } else {
+                        for (let i = 0; i < totalSwimmers; i += lanesPerHeat) {
+                            heats.push(filteredParticipants.slice(i, i + lanesPerHeat));
+                        }
+                    }
+
+                    let displayData = [];
+                    heats.forEach((heatChunk, heatIndex) => {
+                        const heatNumber = heatIndex + 1;
+                        heatChunk.sort((a, b) => parseTime(getEventTime(a, eventName)) - parseTime(getEventTime(b, eventName)));
+
+                        const numSwimmers = heatChunk.length;
+                        const swimmerLanes = activeLaneSeedOrder.slice(0, numSwimmers);
+                        const emptyLanes = activeLaneSeedOrder.slice(numSwimmers);
+
+                        let heatDisplayData = heatChunk.map((participant, indexInHeat) => ({
+                            ...participant,
+                            displayHeat: heatNumber,
+                            displayLane: swimmerLanes[indexInHeat],
+                        }));
+                        emptyLanes.forEach(lane => {
+                            heatDisplayData.push({ isEmpty: true, displayHeat: heatNumber, displayLane: lane });
+                        });
+                        
+                        heatDisplayData.sort((a, b) => a.displayLane - b.displayLane);
+                        displayData.push(...heatDisplayData);
+                    });
+
+                    // --- Render Table Rows ---
+                    let lastHeatRendered = 0;
+                    displayData.forEach(p => {
+                        if (p.displayHeat > lastHeatRendered) {
+                            const heatHeaderRow = `<tr class="bg-gray-200 font-semibold"><td colspan="5" class="px-6 py-2 text-gray-800">Heat ${p.displayHeat}</td></tr>`;
+                            resultsBody.innerHTML += heatHeaderRow;
+                            lastHeatRendered = p.displayHeat;
+                        }
+                        
+                        let rowHTML;
+                        if (p.isEmpty) {
+                            rowHTML = `<tr class="hover:bg-gray-50 h-12"><td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">${p.displayLane}</td><td class="px-6 py-4" colspan="4"></td></tr>`;
+                        } else {
+                            const rawSeedTime = getEventTime(p, eventName);
+                            const seedTime = rawSeedTime === null ? '---' : (parseTime(rawSeedTime) === Infinity ? 'NT' : rawSeedTime);
+                            rowHTML = `
+                                <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">${p.displayLane}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${p.name}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.team}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.age}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">${seedTime}</td>
+                                </tr>
+                            `;
+                        }
+                        resultsBody.innerHTML += rowHTML;
                     });
                 });
-            }
-
-            let lastHeatRendered = 0;
-            displayData.forEach(p => {
-                if (p.displayHeat > lastHeatRendered) {
-                    const heatHeaderRow = `<tr class="bg-gray-200 font-semibold"><td colspan="5" class="px-6 py-2 text-gray-800">Heat ${p.displayHeat}</td></tr>`;
-                    resultsBody.innerHTML += heatHeaderRow;
-                    lastHeatRendered = p.displayHeat;
-                }
-                
-                if (p.isEmpty) {
-                    const row = `<tr class="hover:bg-gray-50 h-12"><td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">${p.displayLane}</td><td class="px-6 py-4" colspan="4"></td></tr>`;
-                    resultsBody.innerHTML += row;
-                    return;
-                }
-
-                const rawSeedTime = getEventTime(p, selectedEvent);
-                let seedTime = rawSeedTime === null ? '---' : (parseTime(rawSeedTime) === Infinity ? 'NT' : rawSeedTime);
-
-                const row = `
-                    <tr class="hover:bg-gray-50 transition-colors duration-200">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">${p.displayLane}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${p.name}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.team}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.age}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">${seedTime}</td>
-                    </tr>
-                `;
-                resultsBody.innerHTML += row;
             });
         }
-        
-        function populateSelectFilter(element, values, defaultOptionText) {
-            const currentSelection = element.value;
-            element.innerHTML = `<option value="all">${defaultOptionText}</option>`;
-            values.forEach(value => {
-                const option = document.createElement('option');
-                option.value = value;
-                option.textContent = value;
-                element.appendChild(option);
+
+        function attachGlobalEventListeners() {
+            document.querySelectorAll('#global-filters-container .filter-input').forEach(input => {
+                input.addEventListener('change', renderFullReport);
+                input.addEventListener('input', renderFullReport);
             });
-            if (values.includes(currentSelection)) {
-                element.value = currentSelection;
-            }
-        }
-
-        function populateFiltersForBlock(blockId) {
-            const genders = [...new Set(allParticipants.map(p => p.gender).filter(g => g))].sort();
-            const events = [...new Set(allParticipants.flatMap(p => (p.events && Array.isArray(p.events)) ? p.events.map(e => e.event) : []))].sort();
-
-            populateSelectFilter(document.getElementById(`genderFilter-${blockId}`), genders, 'All Genders');
-            populateSelectFilter(document.getElementById(`eventFilter-${blockId}`), events, 'All Events');
+            document.getElementById('resetGlobalFilters').addEventListener('click', () => {
+                document.getElementById('globalAgeMinFilter').value = '';
+                document.getElementById('globalAgeMaxFilter').value = '';
+                document.getElementById('globalStartLaneFilter').value = '1';
+                document.getElementById('globalEndLaneFilter').value = '8';
+                renderFullReport();
+            });
         }
 
         // --- Main Execution ---
@@ -323,6 +267,7 @@
                 }
                 console.log("Authenticated successfully.");
 
+                attachGlobalEventListeners();
                 const q = query(collection(db, "participants"));
                 onSnapshot(q, (querySnapshot) => {
                     allParticipants = [];
@@ -331,20 +276,12 @@
                     });
                     
                     statusMessage.classList.add('hidden');
+                    renderFullReport();
 
-                    const existingBlocks = document.querySelectorAll('.filter-block');
-                    if (existingBlocks.length === 0) {
-                        addFilterBlock();
-                    } else {
-                        existingBlocks.forEach(block => {
-                            const blockId = block.dataset.id;
-                            populateFiltersForBlock(blockId);
-                            renderParticipants(blockId);
-                        });
-                    }
                 }, (error) => {
                     console.error("Error with snapshot listener: ", error);
                     statusMessage.innerHTML = `<p class="text-red-500">Error fetching real-time data: ${error.message}.</p>`;
+                    mainContentArea.innerHTML = '';
                 });
 
             } catch (error) {
@@ -352,9 +289,6 @@
                 statusMessage.innerHTML = `<p class="text-red-500">Error loading data: ${error.message}. Make sure your security rules are set to allow reads.</p>`;
             }
         }
-
-        document.getElementById('add-container-btn').addEventListener('click', addFilterBlock);
-        document.getElementById('remove-container-btn').addEventListener('click', removeFilterBlock);
 
         main();
     </script>
