@@ -63,7 +63,6 @@
         let containerIdCounter = 0;
         const mainContentArea = document.getElementById('main-content-area');
         const statusMessage = document.getElementById('statusMessage');
-        const heatLaneSettings = {}; // Store lane settings per heat { 'blockId-heatNum': {start, end} }
 
         // --- Dynamic Block Creation ---
 
@@ -75,17 +74,16 @@
                 <div class="filter-block border-t-4 border-blue-500 pt-4" data-id="${blockId}">
                     <!-- Filter Controls -->
                     <div id="filters-container-${blockId}" class="bg-white p-6 rounded-xl shadow-md mb-8">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 items-end">
                             <h2 class="text-xl font-semibold text-gray-700 col-span-full">Filter & Sort Results #${blockId}</h2>
                             <div class="lg:col-span-1"><label for="teamFilter-${blockId}" class="block text-sm font-medium text-gray-700">Team</label><select id="teamFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Teams</option></select></div>
                             <div class="lg:col-span-1"><label for="genderFilter-${blockId}" class="block text-sm font-medium text-gray-700">Gender</label><select id="genderFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Genders</option></select></div>
                             <div class="lg:col-span-1"><label for="eventFilter-${blockId}" class="block text-sm font-medium text-gray-700">Event</label><select id="eventFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Events</option></select></div>
                             <div class="lg:col-span-1"><label class="block text-sm font-medium text-gray-700">Age Range</label><div class="flex items-center space-x-2 mt-1"><input type="number" id="ageMinFilter-${blockId}" placeholder="Min" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><span class="text-gray-500">-</span><input type="number" id="ageMaxFilter-${blockId}" placeholder="Max" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div></div>
+                            <div class="lg:col-span-1"><label class="block text-sm font-medium text-gray-700">Lane Range</label><div class="flex items-center space-x-2 mt-1"><input type="number" id="startLaneFilter-${blockId}" value="0" placeholder="Start" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><span class="text-gray-500">-</span><input type="number" id="endLaneFilter-${blockId}" value="9" placeholder="End" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div></div>
                             <div class="col-span-full"><button id="resetFilters-${blockId}" class="w-full sm:w-auto sm:float-right bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-md transition">Reset Filters</button></div>
                         </div>
                     </div>
-                    <!-- Per-Heat Controls -->
-                    <div id="per-heat-controls-${blockId}" class="space-y-2 mb-4"></div>
                     <!-- Results Table -->
                     <div id="tableContainer-${blockId}" class="bg-white rounded-xl shadow-md overflow-hidden">
                         <table class="min-w-full"><thead class="bg-gray-50"><tr><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lane</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Team</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seed Time</th></tr></thead><tbody id="resultsBody-${blockId}" class="bg-white"></tbody></table>
@@ -101,15 +99,7 @@
         function removeFilterBlock() {
             const allBlocks = document.querySelectorAll('.filter-block');
             if (allBlocks.length > 0) {
-                const blockToRemove = allBlocks[allBlocks.length - 1];
-                const blockId = blockToRemove.dataset.id;
-                // Clean up stored settings for the removed block
-                Object.keys(heatLaneSettings).forEach(key => {
-                    if (key.startsWith(`${blockId}-`)) {
-                        delete heatLaneSettings[key];
-                    }
-                });
-                blockToRemove.remove();
+                allBlocks[allBlocks.length - 1].remove();
             }
         }
 
@@ -122,13 +112,9 @@
             block.querySelector(`#resetFilters-${blockId}`).addEventListener('click', () => {
                 block.querySelectorAll('.filter-input').forEach(input => {
                     if (input.tagName === 'SELECT') input.value = 'all';
-                    if (input.tagName === 'INPUT') input.value = '';
-                });
-                // Clear stored settings for this block on reset
-                 Object.keys(heatLaneSettings).forEach(key => {
-                    if (key.startsWith(`${blockId}-`)) {
-                        delete heatLaneSettings[key];
-                    }
+                    if (input.tagName === 'INPUT' && !input.id.includes('Lane')) input.value = '';
+                    if (input.id.includes('startLaneFilter')) input.value = '0';
+                    if (input.id.includes('endLaneFilter')) input.value = '9';
                 });
                 renderParticipants(blockId);
             });
@@ -144,6 +130,7 @@
             const seconds = parseInt(parts[2], 10);
             const milliseconds = parts[3] ? parseInt(parts[3].padEnd(2, '0'), 10) / 100 : 0;
             const totalTime = minutes + seconds + milliseconds;
+            // If total time is 0, treat it as the slowest (Infinity)
             if (totalTime === 0) return Infinity;
             return totalTime;
         }
@@ -161,7 +148,6 @@
             const minAge = document.getElementById(`ageMinFilter-${blockId}`).value;
             const maxAge = document.getElementById(`ageMaxFilter-${blockId}`).value;
             const resultsBody = document.getElementById(`resultsBody-${blockId}`);
-            const perHeatControlsContainer = document.getElementById(`per-heat-controls-${blockId}`);
             
             let filteredParticipants = allParticipants.filter(p => {
                 const teamMatch = selectedTeam === 'all' || p.team === selectedTeam;
@@ -173,129 +159,132 @@
 
             const useSpecialSeeding = selectedEvent !== 'all';
 
+            // Sort by time first if an event is selected
             if (useSpecialSeeding) {
+                // Sorts slowest to fastest
                 filteredParticipants.sort((a, b) => parseTime(getEventTime(b, selectedEvent)) - parseTime(getEventTime(a, selectedEvent)));
             } else {
+                 // Default sort by name
                  filteredParticipants.sort((a, b) => a.name.localeCompare(b.name));
             }
 
             resultsBody.innerHTML = '';
-            perHeatControlsContainer.innerHTML = '';
             if (filteredParticipants.length === 0) {
                  resultsBody.innerHTML = `<tr><td colspan="5" class="text-center p-4 text-gray-500">No participants match filters.</td></tr>`;
                  return;
             }
 
-            // Step 1: Group swimmers into heats based on a master lane count (10)
-            const masterLanesPerHeat = 10;
-            const masterHeats = [];
-            const totalSwimmers = filteredParticipants.length;
-            let swimmersInFirstHeat = totalSwimmers % masterLanesPerHeat;
-            if (swimmersInFirstHeat === 0 && totalSwimmers > 0) swimmersInFirstHeat = masterLanesPerHeat;
-
-            if (swimmersInFirstHeat > 0) {
-                masterHeats.push(filteredParticipants.slice(0, swimmersInFirstHeat));
-            }
-            const fullHeatsStartAt = swimmersInFirstHeat;
-            for (let i = fullHeatsStartAt; i < totalSwimmers; i += masterLanesPerHeat) {
-                masterHeats.push(filteredParticipants.slice(i, i + masterLanesPerHeat));
-            }
-
-            // Step 2: Render controls for each heat and then render the heat itself
-            masterHeats.forEach((heatChunk, heatIndex) => {
-                const heatNumber = heatIndex + 1;
-                const heatSettingsKey = `${blockId}-${heatNumber}`;
-
-                // Create or get settings for this heat
-                if (!heatLaneSettings[heatSettingsKey]) {
-                    heatLaneSettings[heatSettingsKey] = { start: 0, end: 9 };
-                }
-                const currentSettings = heatLaneSettings[heatSettingsKey];
-
-                // Render per-heat controls
-                const controlsHTML = `
-                    <div class="flex items-center space-x-2 bg-gray-100 p-2 rounded-md">
-                        <label class="font-semibold text-sm">Heat ${heatNumber} Lane Range:</label>
-                        <input type="number" value="${currentSettings.start}" data-heat="${heatNumber}" class="per-heat-lane-start w-16 p-1 border rounded-md">
-                        <span class="text-gray-500">-</span>
-                        <input type="number" value="${currentSettings.end}" data-heat="${heatNumber}" class="per-heat-lane-end w-16 p-1 border rounded-md">
-                    </div>
-                `;
-                perHeatControlsContainer.insertAdjacentHTML('beforeend', controlsHTML);
-
-                // Now render this specific heat using its controls
-                renderSingleHeat(blockId, heatNumber, heatChunk, useSpecialSeeding);
-            });
-            
-            // Attach event listeners to the newly created per-heat controls
-            document.querySelectorAll(`#per-heat-controls-${blockId} input`).forEach(input => {
-                input.addEventListener('change', (e) => {
-                    const heatNum = e.target.dataset.heat;
-                    const key = `${blockId}-${heatNum}`;
-                    const startInput = document.querySelector(`#per-heat-controls-${blockId} .per-heat-lane-start[data-heat='${heatNum}']`);
-                    const endInput = document.querySelector(`#per-heat-controls-${blockId} .per-heat-lane-end[data-heat='${heatNum}']`);
-                    heatLaneSettings[key] = {
-                        start: parseInt(startInput.value, 10),
-                        end: parseInt(endInput.value, 10)
-                    };
-                    renderParticipants(blockId); // Re-render the whole block to apply changes
-                });
-            });
-        }
-
-        function renderSingleHeat(blockId, heatNumber, heatChunk, useSpecialSeeding) {
-            const resultsBody = document.getElementById(`resultsBody-${blockId}`);
-            const heatSettingsKey = `${blockId}-${heatNumber}`;
-            const settings = heatLaneSettings[heatSettingsKey];
-            let startLane = settings.start;
-            let endLane = settings.end;
-
             let displayData = [];
-            
+            let startLane = parseInt(document.getElementById(`startLaneFilter-${blockId}`).value, 10);
+            if (isNaN(startLane)) startLane = 0;
+            let endLane = parseInt(document.getElementById(`endLaneFilter-${blockId}`).value, 10);
+            if (isNaN(endLane)) endLane = 9;
+            if (endLane < startLane) endLane = startLane;
+
             if (useSpecialSeeding) {
                 const masterLaneSeedOrder = [4, 5, 3, 6, 2, 7, 1, 8, 0, 9];
                 const activeLaneSeedOrder = masterLaneSeedOrder.filter(lane => lane >= startLane && lane <= endLane);
                 
-                heatChunk.sort((a, b) => parseTime(getEventTime(a, selectedEvent)) - parseTime(getEventTime(b, selectedEvent)));
+                let lanesPerHeat = activeLaneSeedOrder.length;
+                if (lanesPerHeat === 0) {
+                     resultsBody.innerHTML = `<tr><td colspan="5" class="text-center p-4 text-gray-500">The selected lane range is not valid for special seeding.</td></tr>`;
+                     return;
+                }
 
-                const heatDisplayData = heatChunk.map((participant, indexInHeat) => ({
-                    ...participant,
-                    displayHeat: heatNumber,
-                    displayLane: activeLaneSeedOrder[indexInHeat],
-                }));
+                let heats = [];
+                const totalSwimmers = filteredParticipants.length;
+                let swimmersInFirstHeat = totalSwimmers % lanesPerHeat;
+                if (swimmersInFirstHeat === 0 && totalSwimmers > 0) {
+                    swimmersInFirstHeat = lanesPerHeat;
+                }
                 
-                const usedLanes = heatDisplayData.map(p => p.displayLane);
-                const unusedLanes = activeLaneSeedOrder.filter(lane => !usedLanes.includes(lane));
-                unusedLanes.forEach(lane => {
-                    heatDisplayData.push({ isEmpty: true, displayHeat: heatNumber, displayLane: lane });
-                });
+                // Original "bottom-up" logic
+                if (swimmersInFirstHeat > 0) {
+                    heats.push(filteredParticipants.slice(0, swimmersInFirstHeat));
+                }
+                const fullHeatsStartAt = swimmersInFirstHeat;
+                for (let i = fullHeatsStartAt; i < totalSwimmers; i += lanesPerHeat) {
+                    heats.push(filteredParticipants.slice(i, i + lanesPerHeat));
+                }
 
-                heatDisplayData.sort((a, b) => a.displayLane - b.displayLane);
-                displayData.push(...heatDisplayData);
-            } else {
-                // Sequential assignment for non-event-specific views
-                const lanesPerHeat = (endLane - startLane) + 1;
-                heatChunk.forEach((participant, index) => {
-                    displayData.push({
+                // Process the generated heats for display
+                heats.forEach((heatChunk, heatIndex) => {
+                    const heatNumber = heatIndex + 1;
+                    heatChunk.sort((a, b) => parseTime(getEventTime(a, selectedEvent)) - parseTime(getEventTime(b, selectedEvent)));
+
+                    const heatDisplayData = heatChunk.map((participant, indexInHeat) => ({
                         ...participant,
                         displayHeat: heatNumber,
-                        displayLane: index + startLane,
+                        displayLane: activeLaneSeedOrder[indexInHeat],
+                    }));
+                    
+                    const usedLanes = heatDisplayData.map(p => p.displayLane);
+                    const unusedLanes = activeLaneSeedOrder.filter(lane => !usedLanes.includes(lane));
+                    unusedLanes.forEach(lane => {
+                        heatDisplayData.push({ isEmpty: true, displayHeat: heatNumber, displayLane: lane });
+                    });
+
+                    heatDisplayData.sort((a, b) => a.displayLane - b.displayLane);
+                    displayData.push(...heatDisplayData);
+                });
+
+
+            } else {
+                // Handle standard sequential lane assignment
+                const lanesPerHeat = (endLane - startLane) + 1;
+                filteredParticipants.forEach((participant, index) => {
+                    displayData.push({
+                        ...participant,
+                        displayHeat: Math.floor(index / lanesPerHeat) + 1,
+                        displayLane: (index % lanesPerHeat) + startLane,
                     });
                 });
             }
 
-            // Render heat header and rows
-            const heatHeaderRow = `<tr class="bg-gray-200 font-semibold"><td colspan="5" class="px-6 py-2 text-gray-800">Heat ${heatNumber}</td></tr>`;
-            resultsBody.innerHTML += heatHeaderRow;
-
+            // Render the final sorted data
+            let lastHeatRendered = 0;
             displayData.forEach(p => {
+                if (p.displayHeat > lastHeatRendered) {
+                    const heatHeaderRow = `
+                        <tr class="bg-gray-200 font-semibold">
+                            <td colspan="5" class="px-6 py-2 text-gray-800">Heat ${p.displayHeat}</td>
+                        </tr>
+                    `;
+                    resultsBody.innerHTML += heatHeaderRow;
+                    lastHeatRendered = p.displayHeat;
+                }
+                
                 if (p.isEmpty) {
-                    resultsBody.innerHTML += `<tr class="hover:bg-gray-50 h-12"><td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">${p.displayLane}</td><td colspan="4"></td></tr>`;
+                    const row = `
+                        <tr class="hover:bg-gray-50 h-12">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">${p.displayLane}</td>
+                            <td class="px-6 py-4"></td><td class="px-6 py-4"></td><td class="px-6 py-4"></td><td class="px-6 py-4"></td>
+                        </tr>
+                    `;
+                    resultsBody.innerHTML += row;
                     return;
                 }
+
                 const rawSeedTime = getEventTime(p, selectedEvent);
-                const seedTime = (rawSeedTime === null) ? '---' : (parseTime(rawSeedTime) === Infinity ? 'NT' : rawSeedTime);
-                resultsBody.innerHTML += `<tr class="hover:bg-gray-50 transition-colors duration-200"><td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">${p.displayLane}</td><td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${p.name}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.team}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.age}</td><td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">${seedTime}</td></tr>`;
+                let seedTime;
+                if (rawSeedTime === null) {
+                    seedTime = '---';
+                } else if (parseTime(rawSeedTime) === Infinity) {
+                    seedTime = 'NT';
+                } else {
+                    seedTime = rawSeedTime;
+                }
+
+                const row = `
+                    <tr class="hover:bg-gray-50 transition-colors duration-200">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">${p.displayLane}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${p.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.team}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.age}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">${seedTime}</td>
+                    </tr>
+                `;
+                resultsBody.innerHTML += row;
             });
         }
         
@@ -314,6 +303,7 @@
         }
 
         function populateFiltersForBlock(blockId) {
+            // Remove alphabetical sort for teams
             const teams = [...new Set(allParticipants.map(p => p.team))];
             const genders = [...new Set(allParticipants.map(p => p.gender).filter(g => g))].sort();
             const events = [...new Set(allParticipants.flatMap(p => (p.events && Array.isArray(p.events)) ? p.events.map(e => e.event) : []))].sort();
@@ -341,6 +331,8 @@
                     });
                     
                     statusMessage.classList.add('hidden');
+
+                    // If no blocks exist, add the first one. Otherwise, update all existing blocks.
                     const existingBlocks = document.querySelectorAll('.filter-block');
                     if (existingBlocks.length === 0) {
                         addFilterBlock();
