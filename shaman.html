@@ -149,8 +149,16 @@
             const sortOrder = document.getElementById(`timeSortFilter-${blockId}`).value;
             const resultsBody = document.getElementById(`resultsBody-${blockId}`);
             
-            let startLane = parseInt(document.getElementById(`startLaneFilter-${blockId}`).value, 10) || 1;
-            let endLane = parseInt(document.getElementById(`endLaneFilter-${blockId}`).value, 10) || startLane + 3;
+            let startLane = parseInt(document.getElementById(`startLaneFilter-${blockId}`).value, 10);
+            if (isNaN(startLane)) {
+                startLane = 1; // Default to 1 if input is invalid
+            }
+
+            let endLane = parseInt(document.getElementById(`endLaneFilter-${blockId}`).value, 10);
+            if (isNaN(endLane)) {
+                endLane = startLane + 3; // Default based on startLane if input is invalid
+            }
+
             if (endLane < startLane) endLane = startLane;
             const lanesPerHeat = (endLane - startLane) + 1;
 
