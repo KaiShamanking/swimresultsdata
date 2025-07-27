@@ -188,22 +188,33 @@
                 const laneSeedOrder = [4, 5, 3, 6, 2, 7, 1, 8, 0, 9];
                 const lanesPerHeat = laneSeedOrder.length;
 
-                // Assign special lanes based on time-sorted rank
-                filteredParticipants.forEach((participant, index) => {
-                    displayData.push({
-                        ...participant,
-                        displayHeat: Math.floor(index / lanesPerHeat) + 1,
-                        displayLane: laneSeedOrder[index % lanesPerHeat],
-                    });
-                });
+                // Process participants in chunks corresponding to heats
+                for (let i = 0; i < filteredParticipants.length; i += lanesPerHeat) {
+                    // Get the swimmers for the current heat
+                    let heatChunk = filteredParticipants.slice(i, i + lanesPerHeat);
+                    const heatNumber = Math.floor(i / lanesPerHeat) + 1;
 
-                // Re-sort the data for display purposes by heat, then by lane
-                displayData.sort((a, b) => {
-                    if (a.displayHeat !== b.displayHeat) {
-                        return a.displayHeat - b.displayHeat;
-                    }
-                    return a.displayLane - b.displayLane;
-                });
+                    // The overall list is already sorted slowest to fastest.
+                    // To seed within the heat (fastest gets lane 4), we need to sort this specific chunk.
+                    // The current `heatChunk` is already sorted slowest to fastest relative to its members.
+                    // So we reverse it to get fastest to slowest for seeding.
+                    heatChunk.reverse();
+
+                    // Assign lanes to swimmers within this heat based on their rank in the heat
+                    const heatDisplayData = heatChunk.map((participant, indexInHeat) => {
+                        return {
+                            ...participant,
+                            displayHeat: heatNumber,
+                            displayLane: laneSeedOrder[indexInHeat],
+                        };
+                    });
+
+                    // Now, sort this heat by lane number for correct display order
+                    heatDisplayData.sort((a, b) => a.displayLane - b.displayLane);
+
+                    // Add the correctly ordered heat to the final display list
+                    displayData.push(...heatDisplayData);
+                }
 
             } else {
                 // Handle standard sequential lane assignment
