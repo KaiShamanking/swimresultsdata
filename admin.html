@@ -199,12 +199,9 @@
 
             const useSpecialSeeding = selectedEvent !== 'all';
 
-            // Sort by time first if an event is selected
             if (useSpecialSeeding) {
-                // Sorts slowest to fastest to prepare for bottom-up heat creation
                 filteredParticipants.sort((a, b) => parseTime(getEventTime(b, selectedEvent)) - parseTime(getEventTime(a, selectedEvent)));
             } else {
-                 // Default sort by name
                  filteredParticipants.sort((a, b) => a.name.localeCompare(b.name));
             }
 
@@ -223,41 +220,47 @@
 
             if (useSpecialSeeding) {
                 const activeLaneSeedOrder = generateSeedOrder(startLane, endLane);
-                
-                let lanesPerHeat = activeLaneSeedOrder.length;
+                const lanesPerHeat = activeLaneSeedOrder.length;
                 if (lanesPerHeat === 0) {
-                     resultsBody.innerHTML = `<tr><td colspan="5" class="text-center p-4 text-gray-500">The selected lane range is not valid. Start lane must be less than or equal to end lane.</td></tr>`;
-                     return;
+                    resultsBody.innerHTML = `<tr><td colspan="5" class="text-center p-4 text-gray-500">The selected lane range is not valid. Start lane must be less than or equal to end lane.</td></tr>`;
+                    return;
                 }
 
                 let heats = [];
                 const totalSwimmers = filteredParticipants.length;
-                let swimmersInFirstHeat = totalSwimmers % lanesPerHeat;
-                if (swimmersInFirstHeat === 0 && totalSwimmers > 0) {
-                    swimmersInFirstHeat = lanesPerHeat;
-                }
                 
-                // Bottom-up heat creation (slowest heat first)
-                if (swimmersInFirstHeat > 0) {
-                    heats.push(filteredParticipants.slice(0, swimmersInFirstHeat));
-                }
-                const fullHeatsStartAt = swimmersInFirstHeat;
-                for (let i = fullHeatsStartAt; i < totalSwimmers; i += lanesPerHeat) {
-                    heats.push(filteredParticipants.slice(i, i + lanesPerHeat));
+                const totalPotentialHeats = Math.ceil(totalSwimmers / lanesPerHeat);
+                const swimmersInFirstPotentialHeat = totalSwimmers % lanesPerHeat;
+
+                // Special Case: If there are at least 2 heats and the first isn't full, balance the first two.
+                if (totalPotentialHeats >= 2 && swimmersInFirstPotentialHeat > 0) {
+                    const swimmersForTwoHeats = swimmersInFirstPotentialHeat + lanesPerHeat;
+                    const groupToReseed = filteredParticipants.slice(0, swimmersForTwoHeats);
+                    const newHeat1Size = Math.floor(swimmersForTwoHeats / 2);
+                    
+                    heats.push(groupToReseed.slice(0, newHeat1Size));
+                    heats.push(groupToReseed.slice(newHeat1Size));
+
+                    for (let i = swimmersForTwoHeats; i < totalSwimmers; i += lanesPerHeat) {
+                        heats.push(filteredParticipants.slice(i, i + lanesPerHeat));
+                    }
+                } else {
+                    // Standard heat generation for single heats or all-full heats.
+                    for (let i = 0; i < totalSwimmers; i += lanesPerHeat) {
+                        heats.push(filteredParticipants.slice(i, i + lanesPerHeat));
+                    }
                 }
 
-                // Process the generated heats for display
+                // Process heats for display
                 heats.forEach((heatChunk, heatIndex) => {
                     const heatNumber = heatIndex + 1;
-                    // Sort this specific heat from fastest to slowest to match the seeded lane order
                     heatChunk.sort((a, b) => parseTime(getEventTime(a, selectedEvent)) - parseTime(getEventTime(b, selectedEvent)));
 
                     let heatDisplayData;
                     const numSwimmers = heatChunk.length;
 
-                    // SPECIAL LOGIC: If this is the first (slowest) heat, it's not full, AND there are faster heats to follow...
-                    if (heatIndex === 0 && heats.length > 1 && numSwimmers < lanesPerHeat) {
-                        // ...then seed swimmers away from the first few lanes.
+                    if (numSwimmers < lanesPerHeat) {
+                        // For any non-full heat, place empty lanes on the outside
                         const numEmptyLanes = lanesPerHeat - numSwimmers;
                         const allLanesForHeat = [...activeLaneSeedOrder].sort((a, b) => a - b);
                         const emptyLanes = allLanesForHeat.slice(0, numEmptyLanes);
@@ -274,28 +277,20 @@
                             heatDisplayData.push({ isEmpty: true, displayHeat: heatNumber, displayLane: lane });
                         });
                     } else {
-                        // ORIGINAL LOGIC: For the fastest heat, any full heat, or when there's only one heat.
+                        // For full heats, use standard center-out seeding
                         heatDisplayData = heatChunk.map((participant, indexInHeat) => ({
                             ...participant,
                             displayHeat: heatNumber,
                             displayLane: activeLaneSeedOrder[indexInHeat],
                         }));
-                        
-                        const usedLanes = heatDisplayData.map(p => p.displayLane);
-                        const unusedLanes = activeLaneSeedOrder.filter(lane => !usedLanes.includes(lane));
-                        unusedLanes.forEach(lane => {
-                            heatDisplayData.push({ isEmpty: true, displayHeat: heatNumber, displayLane: lane });
-                        });
                     }
 
-                    // Sort the final heat data by lane number for correct table rendering
                     heatDisplayData.sort((a, b) => a.displayLane - b.displayLane);
                     displayData.push(...heatDisplayData);
                 });
 
-
             } else {
-                // Handle standard sequential lane assignment
+                // Handle standard sequential lane assignment (no event selected)
                 const lanesPerHeat = (endLane - startLane) + 1;
                 filteredParticipants.forEach((participant, index) => {
                     displayData.push({
@@ -310,35 +305,19 @@
             let lastHeatRendered = 0;
             displayData.forEach(p => {
                 if (p.displayHeat > lastHeatRendered) {
-                    const heatHeaderRow = `
-                        <tr class="bg-gray-200 font-semibold">
-                            <td colspan="5" class="px-6 py-2 text-gray-800">Heat ${p.displayHeat}</td>
-                        </tr>
-                    `;
+                    const heatHeaderRow = `<tr class="bg-gray-200 font-semibold"><td colspan="5" class="px-6 py-2 text-gray-800">Heat ${p.displayHeat}</td></tr>`;
                     resultsBody.innerHTML += heatHeaderRow;
                     lastHeatRendered = p.displayHeat;
                 }
                 
                 if (p.isEmpty) {
-                    const row = `
-                        <tr class="hover:bg-gray-50 h-12">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">${p.displayLane}</td>
-                            <td class="px-6 py-4"></td><td class="px-6 py-4"></td><td class="px-6 py-4"></td><td class="px-6 py-4"></td>
-                        </tr>
-                    `;
+                    const row = `<tr class="hover:bg-gray-50 h-12"><td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">${p.displayLane}</td><td class="px-6 py-4" colspan="4"></td></tr>`;
                     resultsBody.innerHTML += row;
                     return;
                 }
 
                 const rawSeedTime = getEventTime(p, selectedEvent);
-                let seedTime;
-                if (rawSeedTime === null) {
-                    seedTime = '---';
-                } else if (parseTime(rawSeedTime) === Infinity) {
-                    seedTime = 'NT';
-                } else {
-                    seedTime = rawSeedTime;
-                }
+                let seedTime = rawSeedTime === null ? '---' : (parseTime(rawSeedTime) === Infinity ? 'NT' : rawSeedTime);
 
                 const row = `
                     <tr class="hover:bg-gray-50 transition-colors duration-200">
@@ -396,7 +375,6 @@
                     
                     statusMessage.classList.add('hidden');
 
-                    // If no blocks exist, add the first one. Otherwise, update all existing blocks.
                     const existingBlocks = document.querySelectorAll('.filter-block');
                     if (existingBlocks.length === 0) {
                         addFilterBlock();
