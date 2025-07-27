@@ -141,6 +141,27 @@
             return seededOrder;
         }
 
+        /**
+         * Generates a center-out lane assignment order from an arbitrary array of lane numbers.
+         * Assumes the input array is already sorted numerically.
+         * e.g., for lanes [4, 5, 6, 7, 8], it returns [6, 5, 7, 4, 8].
+         * @param {number[]} lanesArray An array of lane numbers, sorted numerically.
+         * @returns {number[]} An array of lane numbers in seeded order.
+         */
+        function generateSeedOrderFromArray(lanesArray) {
+            if (!lanesArray || lanesArray.length === 0) return [];
+            let availableLanes = [...lanesArray]; // Work on a copy
+            const seededOrder = [];
+            while (availableLanes.length > 0) {
+                // Find and remove the lane from the middle of the remaining array
+                const middleIndex = Math.floor((availableLanes.length - 1) / 2);
+                const nextLane = availableLanes.splice(middleIndex, 1)[0];
+                seededOrder.push(nextLane);
+            }
+            return seededOrder;
+        }
+
+
         function parseTime(timeString) {
             if (!timeString || typeof timeString !== 'string' || timeString.toUpperCase() === 'NT') return Infinity;
             const parts = timeString.match(/(\d+):(\d+)\.?(\d+)?/);
@@ -231,18 +252,41 @@
                     // Sort this specific heat from fastest to slowest to match the seeded lane order
                     heatChunk.sort((a, b) => parseTime(getEventTime(a, selectedEvent)) - parseTime(getEventTime(b, selectedEvent)));
 
-                    const heatDisplayData = heatChunk.map((participant, indexInHeat) => ({
-                        ...participant,
-                        displayHeat: heatNumber,
-                        displayLane: activeLaneSeedOrder[indexInHeat],
-                    }));
-                    
-                    // Find any empty lanes to display
-                    const usedLanes = heatDisplayData.map(p => p.displayLane);
-                    const unusedLanes = activeLaneSeedOrder.filter(lane => !usedLanes.includes(lane));
-                    unusedLanes.forEach(lane => {
-                        heatDisplayData.push({ isEmpty: true, displayHeat: heatNumber, displayLane: lane });
-                    });
+                    let heatDisplayData;
+                    const numSwimmers = heatChunk.length;
+
+                    // SPECIAL LOGIC: If this is the first (slowest) heat, it's not full, AND there are faster heats to follow...
+                    if (heatIndex === 0 && heats.length > 1 && numSwimmers < lanesPerHeat) {
+                        // ...then seed swimmers away from the first few lanes.
+                        const numEmptyLanes = lanesPerHeat - numSwimmers;
+                        const allLanesForHeat = [...activeLaneSeedOrder].sort((a, b) => a - b);
+                        const emptyLanes = allLanesForHeat.slice(0, numEmptyLanes);
+                        const swimmerLanes = allLanesForHeat.slice(numEmptyLanes);
+                        const seedOrderForThisHeat = generateSeedOrderFromArray(swimmerLanes);
+
+                        heatDisplayData = heatChunk.map((participant, indexInHeat) => ({
+                            ...participant,
+                            displayHeat: heatNumber,
+                            displayLane: seedOrderForThisHeat[indexInHeat],
+                        }));
+
+                        emptyLanes.forEach(lane => {
+                            heatDisplayData.push({ isEmpty: true, displayHeat: heatNumber, displayLane: lane });
+                        });
+                    } else {
+                        // ORIGINAL LOGIC: For the fastest heat, any full heat, or when there's only one heat.
+                        heatDisplayData = heatChunk.map((participant, indexInHeat) => ({
+                            ...participant,
+                            displayHeat: heatNumber,
+                            displayLane: activeLaneSeedOrder[indexInHeat],
+                        }));
+                        
+                        const usedLanes = heatDisplayData.map(p => p.displayLane);
+                        const unusedLanes = activeLaneSeedOrder.filter(lane => !usedLanes.includes(lane));
+                        unusedLanes.forEach(lane => {
+                            heatDisplayData.push({ isEmpty: true, displayHeat: heatNumber, displayLane: lane });
+                        });
+                    }
 
                     // Sort the final heat data by lane number for correct table rendering
                     heatDisplayData.sort((a, b) => a.displayLane - b.displayLane);
