@@ -32,6 +32,13 @@
             70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
             100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
         }
+        .highlight-word {
+            background-color: #facc15; /* yellow-400 */
+            color: #1f2937; /* gray-800 */
+            padding: 0 4px;
+            border-radius: 4px;
+            transition: all 0.5s ease;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white flex items-center justify-center min-h-screen p-2 sm:p-4">
@@ -57,6 +64,17 @@
             <button id="voiceControlBtn" class="btn w-24 md:w-32 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 sm:px-6 rounded-lg text-base sm:text-lg">
                 Voice
             </button>
+        </div>
+
+        <!-- Voice Recognition Feedback -->
+        <div id="voiceTranscriptContainer" class="text-center space-y-2 hidden">
+            <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Mic Input</h3>
+            <div id="voiceTranscriptDisplay" class="timer-display text-lg text-yellow-300 bg-gray-700 rounded-md p-2 min-h-[2.5rem] w-full max-w-md mx-auto">
+                ...
+            </div>
+            <div id="syllableDisplay" class="flex flex-wrap justify-center items-center gap-2 timer-display text-lg text-gray-800 min-h-[2.5rem]">
+                <!-- Syllable/word spans will be inserted here -->
+            </div>
         </div>
 
         <!-- Main Content Area -->
@@ -97,6 +115,9 @@
         const removeLaneBtn = document.getElementById('removeLaneBtn');
         const toggleLaneZeroBtn = document.getElementById('toggleLaneZeroBtn');
         const voiceControlBtn = document.getElementById('voiceControlBtn');
+        const voiceTranscriptContainer = document.getElementById('voiceTranscriptContainer');
+        const voiceTranscriptDisplay = document.getElementById('voiceTranscriptDisplay');
+        const syllableDisplay = document.getElementById('syllableDisplay');
 
         // Timer and state variables
         let startTime, updatedTime, difference, tInterval;
@@ -266,6 +287,9 @@
             startPauseBtn.className = 'btn w-24 md:w-32 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 sm:px-6 rounded-lg text-base sm:text-lg';
             
             resultsContainer.innerHTML = '';
+            voiceTranscriptDisplay.textContent = '...';
+            syllableDisplay.innerHTML = '';
+            voiceTranscriptContainer.classList.add('hidden');
             
             // Reset all visible lanes
             const allLaneButtons = lanesContainer.querySelectorAll('button[id^="laneBtn"]');
@@ -297,32 +321,44 @@
         // --- Voice Recognition Functions ---
         function handleVoiceCommand(transcript) {
             const cleanedTranscript = transcript.toLowerCase().trim();
-            const words = cleanedTranscript.split(' ');
-            let laneNumber = -1;
+            if (!cleanedTranscript) return;
 
+            const words = cleanedTranscript.split(' ');
+            
             const numberMap = {
-                'zero': 0, 'one': 1, 'two': 2, 'to': 2, 'three': 3, 'four': 4, 'for': 4, 
-                'five': 5, 'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10,
-                'eleven': 11, 'twelve': 12, 'thirteen': 13, 'fourteen': 14, 'fifteen': 15,
-                'sixteen': 16, 'seventeen': 17, 'eighteen': 18, 'nineteen': 19, 'twenty': 20
+                'zero': 0, 'hero': 0, 'ze': 0,
+                'one': 1, 'won': 1, 'wa': 1,
+                'two': 2, 'to': 2, 'too': 2, 'tu': 2,
+                'three': 3, 'tree': 3,
+                'four': 4, 'for': 4, 'fore': 4, 'po': 4, 'fo': 4,
+                'five': 5, 'pipe': 5, 'pa': 5, 'fa': 5,
+                'six': 6, 'sex': 6, 'si': 6,
+                'seven': 7, 'se': 7,
+                'eight': 8, 'ate': 8, 'e': 8,
+                'nine': 9, 'line': 9, 'na': 9,
+                'ten': 10, 'eleven': 11, 'twelve': 12, 'thirteen': 13, 'fourteen': 14,
+                'fifteen': 15, 'sixteen': 16, 'seventeen': 17, 'eighteen': 18,
+                'nineteen': 19, 'twenty': 20
             };
 
-            // Look for a number word or digit in the transcript
             for (const word of words) {
-                if (!isNaN(parseInt(word))) {
-                    laneNumber = parseInt(word);
-                    break;
-                }
-                if (numberMap.hasOwnProperty(word)) {
-                    laneNumber = numberMap[word];
-                    break;
-                }
-            }
+                let numberFound = -1;
 
-            if (laneNumber !== -1) {
-                const laneButton = document.getElementById(`laneBtn${laneNumber}`);
-                if (laneButton && !laneButton.disabled) {
-                    laneButton.click();
+                if (!isNaN(parseInt(word))) {
+                    numberFound = parseInt(word);
+                } else if (numberMap.hasOwnProperty(word)) {
+                    numberFound = numberMap[word];
+                }
+
+                if (numberFound !== -1) {
+                    const digits = String(numberFound).split(''); // "123" -> ["1", "2", "3"] or 10 -> ["1", "0"]
+                    for (const digit of digits) {
+                        const laneNumber = parseInt(digit);
+                        const laneButton = document.getElementById(`laneBtn${laneNumber}`);
+                        if (laneButton && !laneButton.disabled) {
+                            laneButton.click();
+                        }
+                    }
                 }
             }
         }
@@ -340,11 +376,13 @@
                 voiceControlBtn.textContent = 'Listening...';
                 voiceControlBtn.classList.add('bg-green-600', 'listening');
                 voiceControlBtn.classList.remove('bg-gray-600');
+                voiceTranscriptContainer.classList.remove('hidden');
             } else {
                 recognition.stop();
                 voiceControlBtn.textContent = 'Voice';
                 voiceControlBtn.classList.remove('bg-green-600', 'listening');
                 voiceControlBtn.classList.add('bg-gray-600');
+                voiceTranscriptContainer.classList.add('hidden');
             }
         }
 
@@ -353,13 +391,41 @@
 
             recognition.continuous = true;
             recognition.lang = 'en-US';
-            recognition.interimResults = true; // Changed to true for real-time feedback
+            recognition.interimResults = true;
             recognition.maxAlternatives = 1;
 
+            let lastTranscript = '';
+
             recognition.onresult = (event) => {
-                // The last result is the most current and complete one so far
-                const transcript = event.results[event.results.length - 1][0].transcript;
-                handleVoiceCommand(transcript);
+                let interimTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+                
+                voiceTranscriptDisplay.textContent = interimTranscript;
+                
+                const newPart = interimTranscript.replace(lastTranscript, '').trim();
+                if (newPart) {
+                    handleVoiceCommand(newPart);
+                    
+                    syllableDisplay.innerHTML = ''; // Clear previous
+                    const words = interimTranscript.split(' ');
+                    words.forEach((word, index) => {
+                        const wordSpan = document.createElement('span');
+                        wordSpan.textContent = word;
+                        wordSpan.className = 'bg-gray-600 px-2 py-1 rounded';
+                        if (index === words.length - 1) {
+                            wordSpan.classList.add('highlight-word');
+                        }
+                        syllableDisplay.appendChild(wordSpan);
+                    });
+                }
+
+                if (event.results[event.results.length - 1].isFinal) {
+                    lastTranscript = ''; // Reset after a final result
+                } else {
+                    lastTranscript = interimTranscript;
+                }
             };
 
             recognition.onerror = (event) => {
@@ -368,17 +434,18 @@
                     isListening = false;
                     voiceControlBtn.textContent = 'Blocked';
                     voiceControlBtn.disabled = true;
+                    voiceTranscriptContainer.classList.add('hidden');
                 }
             };
 
             recognition.onend = () => {
                 if (isListening) {
-                    // If it stopped but we still want it to listen, restart it.
                     recognition.start();
                 } else {
                     voiceControlBtn.textContent = 'Voice';
                     voiceControlBtn.classList.remove('bg-green-600', 'listening');
                     voiceControlBtn.classList.add('bg-gray-600');
+                    voiceTranscriptContainer.classList.add('hidden');
                 }
             };
         }
@@ -387,7 +454,7 @@
         // Initial setup on page load
         function initializeApp() {
             lanesContainer.innerHTML = '';
-            const initialLaneCount = 8; // Reduced initial lanes for better mobile view
+            const initialLaneCount = 8;
             for(let i = 0; i < initialLaneCount; i++) {
                 addLane();
             }
