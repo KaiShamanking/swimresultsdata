@@ -80,7 +80,7 @@
                             <div class="lg:col-span-2"><label for="genderFilter-${blockId}" class="block text-sm font-medium text-gray-700">Gender</label><select id="genderFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Genders</option></select></div>
                             <div class="lg:col-span-2"><label for="eventFilter-${blockId}" class="block text-sm font-medium text-gray-700">Event</label><select id="eventFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Events</option></select></div>
                             <div class="lg:col-span-2"><label class="block text-sm font-medium text-gray-700">Age Range</label><div class="flex items-center space-x-2 mt-1"><input type="number" id="ageMinFilter-${blockId}" placeholder="Min" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><span class="text-gray-500">-</span><input type="number" id="ageMaxFilter-${blockId}" placeholder="Max" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div></div>
-                            <div class="lg:col-span-2"><label class="block text-sm font-medium text-gray-700">Lane Range</label><div class="flex items-center space-x-2 mt-1"><input type="number" id="startLaneFilter-${blockId}" value="1" placeholder="Start" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><span class="text-gray-500">-</span><input type="number" id="endLaneFilter-${blockId}" value="4" placeholder="End" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div></div>
+                            <div class="lg:col-span-2"><label class="block text-sm font-medium text-gray-700">Lane Range (Sequential Sort)</label><div class="flex items-center space-x-2 mt-1"><input type="number" id="startLaneFilter-${blockId}" value="1" placeholder="Start" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><span class="text-gray-500">-</span><input type="number" id="endLaneFilter-${blockId}" value="4" placeholder="End" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div></div>
                             <div class="lg:col-span-2"><label for="timeSortFilter-${blockId}" class="block text-sm font-medium text-gray-700">Sort by Time</label><select id="timeSortFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="none">Default (Name)</option><option value="asc">Ascending</option><option value="desc">Descending</option></select></div>
                             <div class="col-span-full"><button id="resetFilters-${blockId}" class="w-full sm:w-auto sm:float-right bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-md transition">Reset Filters</button></div>
                         </div>
@@ -149,19 +149,6 @@
             const sortOrder = document.getElementById(`timeSortFilter-${blockId}`).value;
             const resultsBody = document.getElementById(`resultsBody-${blockId}`);
             
-            let startLane = parseInt(document.getElementById(`startLaneFilter-${blockId}`).value, 10);
-            if (isNaN(startLane)) {
-                startLane = 1; // Default to 1 if input is invalid
-            }
-
-            let endLane = parseInt(document.getElementById(`endLaneFilter-${blockId}`).value, 10);
-            if (isNaN(endLane)) {
-                endLane = startLane + 3; // Default based on startLane if input is invalid
-            }
-
-            if (endLane < startLane) endLane = startLane;
-            const lanesPerHeat = (endLane - startLane) + 1;
-
             let filteredParticipants = allParticipants.filter(p => {
                 const teamMatch = selectedTeam === 'all' || p.team === selectedTeam;
                 const genderMatch = selectedGender === 'all' || p.gender === selectedGender;
@@ -170,7 +157,9 @@
                 return teamMatch && genderMatch && eventMatch && ageMatch;
             });
 
-            if (sortOrder !== 'none' && selectedEvent !== 'all') {
+            const useSpecialSeeding = sortOrder !== 'none' && selectedEvent !== 'all';
+
+            if (useSpecialSeeding) {
                 if (sortOrder === 'asc') {
                     filteredParticipants.sort((a, b) => parseTime(getEventTime(a, selectedEvent)) - parseTime(getEventTime(b, selectedEvent)));
                 } else if (sortOrder === 'desc') {
@@ -186,6 +175,19 @@
             }
 
             const laneSeedOrder = [4, 5, 3, 6, 2, 7, 1, 8, 0, 9];
+            let lanesPerHeat;
+            let startLane; // Only used for sequential numbering
+
+            if (useSpecialSeeding) {
+                lanesPerHeat = laneSeedOrder.length;
+            } else {
+                startLane = parseInt(document.getElementById(`startLaneFilter-${blockId}`).value, 10);
+                if (isNaN(startLane)) startLane = 1;
+                let endLane = parseInt(document.getElementById(`endLaneFilter-${blockId}`).value, 10);
+                if (isNaN(endLane)) endLane = startLane + 3;
+                if (endLane < startLane) endLane = startLane;
+                lanesPerHeat = (endLane - startLane) + 1;
+            }
 
             filteredParticipants.forEach((p, index) => {
                 // Check if a new heat is starting
@@ -202,16 +204,13 @@
                 let laneNumber;
                 const indexInHeat = index % lanesPerHeat;
 
-                // Apply special seeding if sorting by time and an event is selected
-                if (sortOrder !== 'none' && selectedEvent !== 'all') {
+                if (useSpecialSeeding) {
                     if (indexInHeat < laneSeedOrder.length) {
                         laneNumber = laneSeedOrder[indexInHeat];
                     } else {
-                        // Fallback for heats larger than the defined seed pattern
                         laneNumber = `? (${indexInHeat + 1})`;
                     }
                 } else {
-                    // Otherwise, use the standard sequential numbering
                     laneNumber = indexInHeat + startLane;
                 }
 
