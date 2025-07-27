@@ -68,12 +68,15 @@
       <!-- Times for events -->
       <div id="eventTimesContainer" class="space-y-3 mt-4"></div>
 
-      <div class="flex gap-4">
-        <button type="button" id="addParticipant" class="btn-primary w-1/2 flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+      <div class="flex flex-wrap gap-4">
+        <button type="button" id="addParticipant" class="btn-primary flex-1 py-3 px-4 rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
           Add Swimmer
         </button>
-        <button type="button" id="submitAll" class="w-1/2 flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+        <button type="button" id="submitAll" class="flex-1 py-3 px-4 rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
           Submit All
+        </button>
+        <button type="button" id="generateRandom" class="flex-1 py-3 px-4 rounded-lg shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+          Generate 10 Random Swimmers
         </button>
       </div>
     </form>
@@ -124,10 +127,16 @@
     const participantsList = [];
     const addBtn = document.getElementById('addParticipant');
     const submitAllBtn = document.getElementById('submitAll');
+    const randomBtn = document.getElementById('generateRandom');
     const statusMessage = document.getElementById('statusMessage');
     const tableBody = document.getElementById('participantsTableBody');
     const eventTimesContainer = document.getElementById('eventTimesContainer');
     const eventCheckboxes = document.querySelectorAll('.event-checkbox');
+
+    const eventNames = [
+      "50m Butterfly","50m Freestyle","50m Backstroke","50m Breaststroke",
+      "100m Butterfly","100m Freestyle","100m Backstroke","100m Breaststroke"
+    ];
 
     // Limit to 5 events & show time inputs
     eventCheckboxes.forEach(cb => {
@@ -155,6 +164,10 @@
     }
 
     addBtn.addEventListener('click', () => {
+      addSwimmerFromForm();
+    });
+
+    function addSwimmerFromForm() {
       const name = document.getElementById('name').value.trim();
       const team = document.getElementById('team').value.trim();
       const age = document.getElementById('age').value;
@@ -177,7 +190,7 @@
       eventTimesContainer.innerHTML = '';
       statusMessage.textContent = 'Swimmer added! Add more or click Submit All.';
       statusMessage.className = 'text-green-600';
-    });
+    }
 
     function renderTable() {
       tableBody.innerHTML = '';
@@ -207,6 +220,38 @@
           statusMessage.className = 'text-yellow-600';
         });
       });
+    }
+
+    // Generate Random Swimmers
+    randomBtn.addEventListener('click', () => {
+      for (let i = 0; i < 10; i++) {
+        participantsList.push(generateRandomSwimmer());
+      }
+      renderTable();
+      statusMessage.textContent = '10 random swimmers generated.';
+      statusMessage.className = 'text-purple-600';
+    });
+
+    function generateRandomSwimmer() {
+      const randomNames = ["Alex", "Jamie", "Taylor", "Chris", "Jordan", "Sam", "Morgan", "Charlie", "Avery", "Casey"];
+      const randomTeams = ["Sharks", "Dolphins", "Whales", "Tigers", "Rays"];
+      const name = randomNames[Math.floor(Math.random() * randomNames.length)] + " " + (Math.floor(Math.random() * 90) + 10);
+      const team = randomTeams[Math.floor(Math.random() * randomTeams.length)];
+      const gender = Math.random() > 0.5 ? "Male" : "Female";
+      const age = Math.floor(Math.random() * 10) + 8; // 8-18
+      const numEvents = Math.floor(Math.random() * 5) + 1;
+      const selectedEvents = [...eventNames].sort(() => 0.5 - Math.random()).slice(0, numEvents);
+      const events = selectedEvents.map(ev => ({
+        event: ev,
+        time: randomTime()
+      }));
+      return { name, team, gender, age, events };
+    }
+
+    function randomTime() {
+      const minutes = "00";
+      const seconds = String(Math.floor(Math.random() * 60)).padStart(2, "0");
+      return `${minutes}:${seconds}`;
     }
 
     submitAllBtn.addEventListener('click', async () => {
