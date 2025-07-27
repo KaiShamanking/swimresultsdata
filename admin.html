@@ -80,7 +80,7 @@
                             <div class="lg:col-span-1"><label for="genderFilter-${blockId}" class="block text-sm font-medium text-gray-700">Gender</label><select id="genderFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Genders</option></select></div>
                             <div class="lg:col-span-1"><label for="eventFilter-${blockId}" class="block text-sm font-medium text-gray-700">Event</label><select id="eventFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Events</option></select></div>
                             <div class="lg:col-span-1"><label class="block text-sm font-medium text-gray-700">Age Range</label><div class="flex items-center space-x-2 mt-1"><input type="number" id="ageMinFilter-${blockId}" placeholder="Min" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><span class="text-gray-500">-</span><input type="number" id="ageMaxFilter-${blockId}" placeholder="Max" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div></div>
-                            <div class="lg:col-span-1"><label class="block text-sm font-medium text-gray-700">Lane Range (Sequential Sort)</label><div class="flex items-center space-x-2 mt-1"><input type="number" id="startLaneFilter-${blockId}" value="0" placeholder="Start" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><span class="text-gray-500">-</span><input type="number" id="endLaneFilter-${blockId}" value="9" placeholder="End" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div></div>
+                            <div class="lg:col-span-1"><label class="block text-sm font-medium text-gray-700">Lane Range</label><div class="flex items-center space-x-2 mt-1"><input type="number" id="startLaneFilter-${blockId}" value="0" placeholder="Start" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><span class="text-gray-500">-</span><input type="number" id="endLaneFilter-${blockId}" value="9" placeholder="End" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div></div>
                             <div class="col-span-full"><button id="resetFilters-${blockId}" class="w-full sm:w-auto sm:float-right bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-md transition">Reset Filters</button></div>
                         </div>
                     </div>
@@ -161,8 +161,8 @@
 
             // Sort by time first if an event is selected
             if (useSpecialSeeding) {
-                // Ascending sort puts fastest times first. Then reverse for slowest-to-fastest heats.
-                filteredParticipants.sort((a, b) => parseTime(getEventTime(a, selectedEvent)) - parseTime(getEventTime(b, selectedEvent))).reverse();
+                // Sorts slowest to fastest
+                filteredParticipants.sort((a, b) => parseTime(getEventTime(b, selectedEvent)) - parseTime(getEventTime(a, selectedEvent)));
             } else {
                  // Default sort by name
                  filteredParticipants.sort((a, b) => a.name.localeCompare(b.name));
@@ -175,48 +175,86 @@
             }
 
             let displayData = [];
+            let startLane = parseInt(document.getElementById(`startLaneFilter-${blockId}`).value, 10);
+            if (isNaN(startLane)) startLane = 0;
+            let endLane = parseInt(document.getElementById(`endLaneFilter-${blockId}`).value, 10);
+            if (isNaN(endLane)) endLane = 9;
+            if (endLane < startLane) endLane = startLane;
 
             if (useSpecialSeeding) {
-                const laneSeedOrder = [4, 5, 3, 6, 2, 7, 1, 8, 0, 9];
-                const lanesPerHeat = laneSeedOrder.length;
+                const masterLaneSeedOrder = [4, 5, 3, 6, 2, 7, 1, 8, 0, 9];
+                const activeLaneSeedOrder = masterLaneSeedOrder.filter(lane => lane >= startLane && lane <= endLane);
+                
+                let lanesPerHeat = activeLaneSeedOrder.length;
+                if (lanesPerHeat === 0) {
+                     resultsBody.innerHTML = `<tr><td colspan="5" class="text-center p-4 text-gray-500">The selected lane range is not valid for special seeding.</td></tr>`;
+                     return;
+                }
 
-                // Process participants in chunks corresponding to heats
-                for (let i = 0; i < filteredParticipants.length; i += lanesPerHeat) {
-                    // Get the swimmers for the current heat
-                    let heatChunk = filteredParticipants.slice(i, i + lanesPerHeat);
-                    const heatNumber = Math.floor(i / lanesPerHeat) + 1;
+                let heats = [];
+                const totalSwimmers = filteredParticipants.length;
+                let numHeats = Math.ceil(totalSwimmers / lanesPerHeat);
+                let swimmersInFirstHeat = totalSwimmers % lanesPerHeat;
+                if (swimmersInFirstHeat === 0 && totalSwimmers > 0) {
+                    swimmersInFirstHeat = lanesPerHeat;
+                }
+                
+                // NEW LOGIC: Redistribute if first heat has too few swimmers
+                if (numHeats > 1 && swimmersInFirstHeat > 0 && swimmersInFirstHeat < 3) {
+                    // Avoid heats of 1 or 2 by redistributing
+                    const swimmersToDistribute = swimmersInFirstHeat;
+                    const remainingSwimmers = totalSwimmers - swimmersToDistribute;
+                    const remainingHeats = numHeats - 1;
+                    
+                    // Take the slowest swimmers and add them to the remaining swimmers
+                    const combinedPool = filteredParticipants.slice(0, remainingSwimmers + swimmersToDistribute);
+                    
+                    // Recalculate heat distribution for this larger pool
+                    const baseSize = Math.floor(combinedPool.length / remainingHeats);
+                    const extra = combinedPool.length % remainingHeats;
 
-                    // The overall list is already sorted slowest to fastest.
-                    // To seed within the heat (fastest gets lane 4), we need to sort this specific chunk.
-                    // The current `heatChunk` is already sorted slowest to fastest relative to its members.
-                    // So we reverse it to get fastest to slowest for seeding.
-                    heatChunk.reverse();
+                    let currentPos = 0;
+                    for (let i = 0; i < remainingHeats; i++) {
+                        const heatSize = baseSize + (i < extra ? 1 : 0);
+                        heats.push(combinedPool.slice(currentPos, currentPos + heatSize));
+                        currentPos += heatSize;
+                    }
+                } else {
+                    // Original "bottom-up" logic
+                    if (swimmersInFirstHeat > 0) {
+                        heats.push(filteredParticipants.slice(0, swimmersInFirstHeat));
+                    }
+                    const fullHeatsStartAt = swimmersInFirstHeat;
+                    for (let i = fullHeatsStartAt; i < totalSwimmers; i += lanesPerHeat) {
+                        heats.push(filteredParticipants.slice(i, i + lanesPerHeat));
+                    }
+                }
 
-                    // Assign lanes to swimmers within this heat based on their rank in the heat
-                    const heatDisplayData = heatChunk.map((participant, indexInHeat) => {
-                        return {
-                            ...participant,
-                            displayHeat: heatNumber,
-                            displayLane: laneSeedOrder[indexInHeat],
-                        };
+                // Process the generated heats for display
+                heats.forEach((heatChunk, heatIndex) => {
+                    const heatNumber = heatIndex + 1;
+                    heatChunk.sort((a, b) => parseTime(getEventTime(a, selectedEvent)) - parseTime(getEventTime(b, selectedEvent)));
+
+                    const heatDisplayData = heatChunk.map((participant, indexInHeat) => ({
+                        ...participant,
+                        displayHeat: heatNumber,
+                        displayLane: activeLaneSeedOrder[indexInHeat],
+                    }));
+                    
+                    const usedLanes = heatDisplayData.map(p => p.displayLane);
+                    const unusedLanes = activeLaneSeedOrder.filter(lane => !usedLanes.includes(lane));
+                    unusedLanes.forEach(lane => {
+                        heatDisplayData.push({ isEmpty: true, displayHeat: heatNumber, displayLane: lane });
                     });
 
-                    // Now, sort this heat by lane number for correct display order
                     heatDisplayData.sort((a, b) => a.displayLane - b.displayLane);
-
-                    // Add the correctly ordered heat to the final display list
                     displayData.push(...heatDisplayData);
-                }
+                });
+
 
             } else {
                 // Handle standard sequential lane assignment
-                let startLane = parseInt(document.getElementById(`startLaneFilter-${blockId}`).value, 10);
-                if (isNaN(startLane)) startLane = 0;
-                let endLane = parseInt(document.getElementById(`endLaneFilter-${blockId}`).value, 10);
-                if (isNaN(endLane)) endLane = 9;
-                if (endLane < startLane) endLane = startLane;
                 const lanesPerHeat = (endLane - startLane) + 1;
-
                 filteredParticipants.forEach((participant, index) => {
                     displayData.push({
                         ...participant,
@@ -238,15 +276,26 @@
                     resultsBody.innerHTML += heatHeaderRow;
                     lastHeatRendered = p.displayHeat;
                 }
+                
+                if (p.isEmpty) {
+                    const row = `
+                        <tr class="hover:bg-gray-50 h-12">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">${p.displayLane}</td>
+                            <td class="px-6 py-4"></td><td class="px-6 py-4"></td><td class="px-6 py-4"></td><td class="px-6 py-4"></td>
+                        </tr>
+                    `;
+                    resultsBody.innerHTML += row;
+                    return;
+                }
 
                 const rawSeedTime = getEventTime(p, selectedEvent);
                 let seedTime;
                 if (rawSeedTime === null) {
-                    seedTime = '---'; // No event selected or swimmer not in event
+                    seedTime = '---';
                 } else if (parseTime(rawSeedTime) === Infinity) {
-                    seedTime = 'NT'; // No time or zero time
+                    seedTime = 'NT';
                 } else {
-                    seedTime = rawSeedTime; // Valid time
+                    seedTime = rawSeedTime;
                 }
 
                 const row = `
