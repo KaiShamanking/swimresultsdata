@@ -133,34 +133,12 @@
 
             const seededOrder = [];
             while (availableLanes.length > 0) {
-                // Find and remove the lane from the middle of the remaining array
                 const middleIndex = Math.floor((availableLanes.length - 1) / 2);
                 const nextLane = availableLanes.splice(middleIndex, 1)[0];
                 seededOrder.push(nextLane);
             }
             return seededOrder;
         }
-
-        /**
-         * Generates a center-out lane assignment order from an arbitrary array of lane numbers.
-         * Assumes the input array is already sorted numerically.
-         * e.g., for lanes [4, 5, 6, 7, 8], it returns [6, 5, 7, 4, 8].
-         * @param {number[]} lanesArray An array of lane numbers, sorted numerically.
-         * @returns {number[]} An array of lane numbers in seeded order.
-         */
-        function generateSeedOrderFromArray(lanesArray) {
-            if (!lanesArray || lanesArray.length === 0) return [];
-            let availableLanes = [...lanesArray]; // Work on a copy
-            const seededOrder = [];
-            while (availableLanes.length > 0) {
-                // Find and remove the lane from the middle of the remaining array
-                const middleIndex = Math.floor((availableLanes.length - 1) / 2);
-                const nextLane = availableLanes.splice(middleIndex, 1)[0];
-                seededOrder.push(nextLane);
-            }
-            return seededOrder;
-        }
-
 
         function parseTime(timeString) {
             if (!timeString || typeof timeString !== 'string' || timeString.toUpperCase() === 'NT') return Infinity;
@@ -170,7 +148,6 @@
             const seconds = parseInt(parts[2], 10);
             const milliseconds = parts[3] ? parseInt(parts[3].padEnd(2, '0'), 10) / 100 : 0;
             const totalTime = minutes + seconds + milliseconds;
-            // If total time is 0, treat it as the slowest (Infinity)
             if (totalTime === 0) return Infinity;
             return totalTime;
         }
@@ -232,7 +209,6 @@
                 const totalPotentialHeats = Math.ceil(totalSwimmers / lanesPerHeat);
                 const swimmersInFirstPotentialHeat = totalSwimmers % lanesPerHeat;
 
-                // Special Case: If there are at least 2 heats and the first isn't full, balance the first two.
                 if (totalPotentialHeats >= 2 && swimmersInFirstPotentialHeat > 0) {
                     const swimmersForTwoHeats = swimmersInFirstPotentialHeat + lanesPerHeat;
                     const groupToReseed = filteredParticipants.slice(0, swimmersForTwoHeats);
@@ -245,13 +221,11 @@
                         heats.push(filteredParticipants.slice(i, i + lanesPerHeat));
                     }
                 } else {
-                    // Standard heat generation for single heats or all-full heats.
                     for (let i = 0; i < totalSwimmers; i += lanesPerHeat) {
                         heats.push(filteredParticipants.slice(i, i + lanesPerHeat));
                     }
                 }
 
-                // Process heats for display
                 heats.forEach((heatChunk, heatIndex) => {
                     const heatNumber = heatIndex + 1;
                     heatChunk.sort((a, b) => parseTime(getEventTime(a, selectedEvent)) - parseTime(getEventTime(b, selectedEvent)));
@@ -259,38 +233,27 @@
                     let heatDisplayData;
                     const numSwimmers = heatChunk.length;
 
-                    if (numSwimmers < lanesPerHeat) {
-                        // For any non-full heat, place empty lanes on the outside
-                        const numEmptyLanes = lanesPerHeat - numSwimmers;
-                        const allLanesForHeat = [...activeLaneSeedOrder].sort((a, b) => a - b);
-                        const emptyLanes = allLanesForHeat.slice(0, numEmptyLanes);
-                        const swimmerLanes = allLanesForHeat.slice(numEmptyLanes);
-                        const seedOrderForThisHeat = generateSeedOrderFromArray(swimmerLanes);
+                    // Swimmers get the best (center) lanes available. Empty lanes are the leftover outer ones.
+                    const swimmerLanes = activeLaneSeedOrder.slice(0, numSwimmers);
+                    const emptyLanes = activeLaneSeedOrder.slice(numSwimmers);
 
-                        heatDisplayData = heatChunk.map((participant, indexInHeat) => ({
-                            ...participant,
-                            displayHeat: heatNumber,
-                            displayLane: seedOrderForThisHeat[indexInHeat],
-                        }));
+                    // Assign swimmers to their seeded lanes
+                    heatDisplayData = heatChunk.map((participant, indexInHeat) => ({
+                        ...participant,
+                        displayHeat: heatNumber,
+                        displayLane: swimmerLanes[indexInHeat],
+                    }));
 
-                        emptyLanes.forEach(lane => {
-                            heatDisplayData.push({ isEmpty: true, displayHeat: heatNumber, displayLane: lane });
-                        });
-                    } else {
-                        // For full heats, use standard center-out seeding
-                        heatDisplayData = heatChunk.map((participant, indexInHeat) => ({
-                            ...participant,
-                            displayHeat: heatNumber,
-                            displayLane: activeLaneSeedOrder[indexInHeat],
-                        }));
-                    }
-
+                    // Add the leftover outer lanes as empty
+                    emptyLanes.forEach(lane => {
+                        heatDisplayData.push({ isEmpty: true, displayHeat: heatNumber, displayLane: lane });
+                    });
+                    
                     heatDisplayData.sort((a, b) => a.displayLane - b.displayLane);
                     displayData.push(...heatDisplayData);
                 });
 
             } else {
-                // Handle standard sequential lane assignment (no event selected)
                 const lanesPerHeat = (endLane - startLane) + 1;
                 filteredParticipants.forEach((participant, index) => {
                     displayData.push({
@@ -301,7 +264,6 @@
                 });
             }
 
-            // Render the final sorted data
             let lastHeatRendered = 0;
             displayData.forEach(p => {
                 if (p.displayHeat > lastHeatRendered) {
