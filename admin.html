@@ -3,87 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stopwatch with Lane Timers</title>
     <title>Swim Participant Viewer</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
         }
-        .timer-display {
-            font-family: 'Roboto Mono', monospace;
-        }
-        .btn {
-            transition: all 0.2s ease-in-out;
-        }
-        .btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        .btn:disabled {
-            cursor: not-allowed;
-            opacity: 0.5;
-        }
     </style>
 </head>
-<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen p-2 sm:p-4">
 <body class="bg-gray-50">
 
-    <div class="w-full max-w-5xl mx-auto bg-gray-800 rounded-2xl shadow-2xl p-4 md:p-8 space-y-6">
-        
-        <!-- Main Stopwatch Display -->
-        <div class="text-center">
-            <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-cyan-400 mb-4">Stopwatch</h1>
-            <div id="stopwatchDisplay" class="timer-display text-4xl sm:text-6xl md:text-8xl font-bold bg-gray-900 rounded-lg p-2 sm:p-4 tracking-tight">
-                00:00.00
-            </div>
-        </div>
     <!-- Control Buttons -->
     <div class="fixed top-4 right-4 z-10 flex space-x-2">
         <button id="add-container-btn" class="bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center text-2xl font-bold shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">+</button>
         <button id="remove-container-btn" class="bg-red-600 text-white rounded-full w-10 h-10 flex items-center justify-center text-2xl font-bold shadow-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition">-</button>
     </div>
 
-        <!-- Controls -->
-        <div class="flex justify-center items-center space-x-4">
-            <button id="startPauseBtn" class="btn w-28 md:w-40 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 sm:px-6 rounded-lg text-base sm:text-lg">
-                Start
-            </button>
-            <button id="resetBtn" class="btn w-28 md:w-40 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 sm:px-6 rounded-lg text-base sm:text-lg">
-                Reset
-            </button>
     <div class="container mx-auto p-4 sm:p-6 lg:p-8">
         <div class="text-center mb-8">
             <h1 class="text-4xl font-bold text-gray-800">Swim Participants</h1>
             <p class="mt-2 text-gray-600">Add or remove filter blocks to compare results.</p>
         </div>
 
-        <!-- Main Content Area -->
-        <div class="grid grid-cols-2 gap-4 md:gap-8">
-            <!-- Left Side: Lanes -->
-            <div class="space-y-4">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-lg sm:text-xl md:text-2xl font-bold text-cyan-400">Lanes</h2>
-                    <div class="flex space-x-1 sm:space-x-2">
-                        <button id="toggleLaneZeroBtn" title="Toggle Lane 0" class="btn bg-purple-500 hover:bg-purple-600 text-white font-bold w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xl sm:text-2xl pb-1">0</button>
-                        <button id="addLaneBtn" title="Add Lane" class="btn bg-blue-500 hover:bg-blue-600 text-white font-bold w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xl sm:text-2xl pb-1">+</button>
-                        <button id="removeLaneBtn" title="Remove Last Lane" class="btn bg-green-800 hover:bg-green-900 text-white font-bold w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xl sm:text-2xl pb-1">-</button>
-                    </div>
-                </div>
-                <div id="lanesContainer" class="space-y-2">
-                    <!-- Lane rows will be dynamically inserted here -->
-                </div>
-            </div>
-
-            <!-- Right Side: Results -->
-            <div class="space-y-4">
-                <h2 class="text-lg sm:text-xl md:text-2xl font-bold text-cyan-400 text-center">Results</h2>
-                <div id="resultsContainer" class="space-y-2">
-                    <!-- Sorted results will be dynamically inserted here -->
-                </div>
-            </div>
         <!-- This is where the filter/result blocks will be dynamically added -->
         <div id="main-content-area" class="space-y-8"></div>
         
@@ -94,16 +36,6 @@
 
     </div>
 
-    <script>
-        // DOM elements
-        const stopwatchDisplay = document.getElementById('stopwatchDisplay');
-        const startPauseBtn = document.getElementById('startPauseBtn');
-        const resetBtn = document.getElementById('resetBtn');
-        const lanesContainer = document.getElementById('lanesContainer');
-        const resultsContainer = document.getElementById('resultsContainer');
-        const addLaneBtn = document.getElementById('addLaneBtn');
-        const removeLaneBtn = document.getElementById('removeLaneBtn');
-        const toggleLaneZeroBtn = document.getElementById('toggleLaneZeroBtn');
     <!-- Firebase SDK -->
     <script type="module">
         // Import Firebase modules
@@ -111,16 +43,6 @@
         import { getFirestore, collection, onSnapshot, query, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // Timer and state variables
-        let startTime, updatedTime, difference, tInterval;
-        let running = false;
-        let paused = false;
-        let timeOffset = 0;
-        let results = []; // Array to store {lane, time, timeString}
-        let laneCount = 0; // Number of lanes *besides* lane 0
-        let hasLaneZero = false;
-        const MAX_LANES = 20; // Max number of lanes besides lane 0
-        const MIN_LANES = 1;
         // --- Your Firebase Configuration ---
         const firebaseConfig = {
           apiKey: "AIzaSyBZk__e3uaXa676oO4J5i9fxwSn_jP2Nq4",
@@ -131,59 +53,19 @@
           appId: "1:816372780565:web:76eaafd9f40f33854881c"
         };
 
-        // Creates a DOM element for a single lane
-        function createLaneElement(index) {
-            const laneRow = document.createElement('div');
-            laneRow.className = 'flex items-center space-x-2';
-            laneRow.id = `laneRow${index}`;
         // --- App Logic ---
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
         setLogLevel('error');
 
-            const laneButton = document.createElement('button');
-            laneButton.id = `laneBtn${index}`;
-            laneButton.textContent = `Lane ${index}`;
-            laneButton.className = 'btn bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 sm:py-3 rounded-md w-20 sm:w-24 flex-shrink-0 text-xs sm:text-base';
-            laneButton.onclick = () => recordLaneTime(index);
         let allParticipants = [];
         let containerIdCounter = 0;
         const mainContentArea = document.getElementById('main-content-area');
         const statusMessage = document.getElementById('statusMessage');
 
-            const laneTimeDiv = document.createElement('div');
-            laneTimeDiv.className = 'bg-gray-700 p-2 sm:p-3 rounded-lg flex-grow flex justify-center items-center';
-            laneTimeDiv.innerHTML = `<span id="laneTime${index}" class="timer-display font-medium text-cyan-300 text-base sm:text-xl">00:00.00</span>`;
-            
-            laneRow.appendChild(laneButton);
-            laneRow.appendChild(laneTimeDiv);
-            return laneRow;
-        }
-        
-        // Adds a new lane (starting from 1)
-        function addLane() {
-            if (laneCount >= MAX_LANES) return;
-            const newLaneIndex = laneCount + 1;
-            const newLane = createLaneElement(newLaneIndex);
-            lanesContainer.appendChild(newLane);
-            laneCount++;
-            updateLaneButtonsState();
-        }
         // --- Dynamic Block Creation ---
 
-        // Removes the last lane (not lane 0)
-        function removeLane() {
-            if (laneCount <= MIN_LANES) return;
-            const laneToRemoveIndex = laneCount;
-            const rowToRemove = document.getElementById(`laneRow${laneToRemoveIndex}`);
-            if (rowToRemove) {
-                lanesContainer.removeChild(rowToRemove);
-            }
-            laneCount--;
-            results = results.filter(r => r.lane !== laneToRemoveIndex);
-            updateResultsDisplay();
-            updateLaneButtonsState();
         function addFilterBlock() {
             containerIdCounter++;
             const blockId = containerIdCounter;
@@ -192,14 +74,13 @@
                 <div class="filter-block border-t-4 border-blue-500 pt-4" data-id="${blockId}">
                     <!-- Filter Controls -->
                     <div id="filters-container-${blockId}" class="bg-white p-6 rounded-xl shadow-md mb-8">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6 items-end">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 items-end">
                             <h2 class="text-xl font-semibold text-gray-700 col-span-full">Filter & Sort Results #${blockId}</h2>
-                            <div class="lg:col-span-2"><label for="teamFilter-${blockId}" class="block text-sm font-medium text-gray-700">Team</label><select id="teamFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Teams</option></select></div>
-                            <div class="lg:col-span-2"><label for="genderFilter-${blockId}" class="block text-sm font-medium text-gray-700">Gender</label><select id="genderFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Genders</option></select></div>
-                            <div class="lg:col-span-2"><label for="eventFilter-${blockId}" class="block text-sm font-medium text-gray-700">Event</label><select id="eventFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Events</option></select></div>
-                            <div class="lg:col-span-2"><label class="block text-sm font-medium text-gray-700">Age Range</label><div class="flex items-center space-x-2 mt-1"><input type="number" id="ageMinFilter-${blockId}" placeholder="Min" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><span class="text-gray-500">-</span><input type="number" id="ageMaxFilter-${blockId}" placeholder="Max" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div></div>
-                            <div class="lg:col-span-2"><label class="block text-sm font-medium text-gray-700">Lane Range</label><div class="flex items-center space-x-2 mt-1"><input type="number" id="startLaneFilter-${blockId}" value="1" placeholder="Start" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><span class="text-gray-500">-</span><input type="number" id="endLaneFilter-${blockId}" value="4" placeholder="End" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div></div>
-                            <div class="lg:col-span-2"><label for="timeSortFilter-${blockId}" class="block text-sm font-medium text-gray-700">Sort by Time</label><select id="timeSortFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="none">Default (Name)</option><option value="asc">Ascending</option><option value="desc">Descending</option></select></div>
+                            <div class="lg:col-span-1"><label for="teamFilter-${blockId}" class="block text-sm font-medium text-gray-700">Team</label><select id="teamFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Teams</option></select></div>
+                            <div class="lg:col-span-1"><label for="genderFilter-${blockId}" class="block text-sm font-medium text-gray-700">Gender</label><select id="genderFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Genders</option></select></div>
+                            <div class="lg:col-span-1"><label for="eventFilter-${blockId}" class="block text-sm font-medium text-gray-700">Event</label><select id="eventFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Events</option></select></div>
+                            <div class="lg:col-span-1"><label class="block text-sm font-medium text-gray-700">Age Range</label><div class="flex items-center space-x-2 mt-1"><input type="number" id="ageMinFilter-${blockId}" placeholder="Min" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><span class="text-gray-500">-</span><input type="number" id="ageMaxFilter-${blockId}" placeholder="Max" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div></div>
+                            <div class="lg:col-span-1"><label class="block text-sm font-medium text-gray-700">Lane Range (Sequential Sort)</label><div class="flex items-center space-x-2 mt-1"><input type="number" id="startLaneFilter-${blockId}" value="0" placeholder="Start" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><span class="text-gray-500">-</span><input type="number" id="endLaneFilter-${blockId}" value="9" placeholder="End" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div></div>
                             <div class="col-span-full"><button id="resetFilters-${blockId}" class="w-full sm:w-auto sm:float-right bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-md transition">Reset Filters</button></div>
                         </div>
                     </div>
@@ -215,21 +96,6 @@
             renderParticipants(blockId);
         }
 
-        // Toggles the existence of Lane 0
-        function toggleLaneZero() {
-            hasLaneZero = !hasLaneZero;
-            if (hasLaneZero) {
-                const laneZeroElement = createLaneElement(0);
-                lanesContainer.prepend(laneZeroElement);
-                toggleLaneZeroBtn.classList.replace('bg-purple-500', 'bg-red-500');
-            } else {
-                const rowToRemove = document.getElementById('laneRow0');
-                if (rowToRemove) {
-                    lanesContainer.removeChild(rowToRemove);
-                }
-                results = results.filter(r => r.lane !== 0);
-                updateResultsDisplay();
-                toggleLaneZeroBtn.classList.replace('bg-red-500', 'bg-purple-500');
         function removeFilterBlock() {
             const allBlocks = document.querySelectorAll('.filter-block');
             if (allBlocks.length > 0) {
@@ -237,10 +103,6 @@
             }
         }
 
-        // Updates the enabled/disabled state of lane control buttons
-        function updateLaneButtonsState() {
-            removeLaneBtn.disabled = laneCount <= MIN_LANES;
-            addLaneBtn.disabled = laneCount >= MAX_LANES;
         function attachEventListenersToBlock(blockId) {
             const block = document.querySelector(`.filter-block[data-id='${blockId}']`);
             block.querySelectorAll('.filter-input').forEach(input => {
@@ -251,77 +113,42 @@
                 block.querySelectorAll('.filter-input').forEach(input => {
                     if (input.tagName === 'SELECT') input.value = 'all';
                     if (input.tagName === 'INPUT' && !input.id.includes('Lane')) input.value = '';
-                    if (input.id.includes('timeSortFilter')) input.value = 'none';
-                    if (input.id.includes('startLaneFilter')) input.value = '1';
-                    if (input.id.includes('endLaneFilter')) input.value = '4';
+                    if (input.id.includes('startLaneFilter')) input.value = '0';
+                    if (input.id.includes('endLaneFilter')) input.value = '9';
                 });
                 renderParticipants(blockId);
             });
         }
 
-        // Format time helper function (MM:SS.ss)
-        function formatTime(ms) {
-            const totalSeconds = Math.floor(ms / 1000);
-            const minutes = Math.floor(totalSeconds / 60);
-            const seconds = totalSeconds % 60;
-            const centiseconds = Math.floor((ms % 1000) / 10);
-            return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(centiseconds).padStart(2, '0')}`;
-        }
         // --- Core Logic (now modular) ---
 
-        // Get ordinal suffix for numbers (1st, 2nd, 3rd)
-        function getOrdinal(n) {
-            const s = ["th", "st", "nd", "rd"], v = n % 100;
-            return n + (s[(v - 20) % 10] || s[v] || s[0]);
         function parseTime(timeString) {
-            if (!timeString || typeof timeString !== 'string') return Infinity;
+            if (!timeString || typeof timeString !== 'string' || timeString.toUpperCase() === 'NT') return Infinity;
             const parts = timeString.match(/(\d+):(\d+)\.?(\d+)?/);
             if (!parts) return Infinity;
             const minutes = parseInt(parts[1], 10) * 60;
             const seconds = parseInt(parts[2], 10);
             const milliseconds = parts[3] ? parseInt(parts[3].padEnd(2, '0'), 10) / 100 : 0;
-            return minutes + seconds + milliseconds;
+            const totalTime = minutes + seconds + milliseconds;
+            // If total time is 0, treat it as the slowest (Infinity)
+            if (totalTime === 0) return Infinity;
+            return totalTime;
         }
 
-        // Update the main timer display
-        function updateDisplay() {
-            updatedTime = new Date().getTime();
-            difference = (updatedTime - startTime) + timeOffset;
-            stopwatchDisplay.textContent = formatTime(difference);
         function getEventTime(participant, eventName) {
             if (!participant.events || !Array.isArray(participant.events) || eventName === 'all') return null;
             const eventObj = participant.events.find(e => e.event === eventName);
             return eventObj ? eventObj.time : null;
         }
 
-        // Update the results display
-        function updateResultsDisplay() {
-            resultsContainer.innerHTML = '';
-            results.sort((a, b) => a.time - b.time);
         function renderParticipants(blockId) {
             const selectedTeam = document.getElementById(`teamFilter-${blockId}`).value;
             const selectedGender = document.getElementById(`genderFilter-${blockId}`).value;
             const selectedEvent = document.getElementById(`eventFilter-${blockId}`).value;
             const minAge = document.getElementById(`ageMinFilter-${blockId}`).value;
             const maxAge = document.getElementById(`ageMaxFilter-${blockId}`).value;
-            const sortOrder = document.getElementById(`timeSortFilter-${blockId}`).value;
             const resultsBody = document.getElementById(`resultsBody-${blockId}`);
             
-            let startLane = parseInt(document.getElementById(`startLaneFilter-${blockId}`).value, 10) || 1;
-            let endLane = parseInt(document.getElementById(`endLaneFilter-${blockId}`).value, 10) || startLane + 3;
-            if (endLane < startLane) endLane = startLane;
-            const lanesPerHeat = (endLane - startLane) + 1;
-
-            results.forEach((result, index) => {
-                const place = getOrdinal(index + 1);
-                const resultDiv = document.createElement('div');
-                resultDiv.className = 'bg-gray-700 p-2 sm:p-3 rounded-lg grid grid-cols-3 text-center items-center font-semibold text-xs sm:text-base';
-                resultDiv.innerHTML = `
-                    <span class="text-yellow-400">${place}</span>
-                    <span class="text-white">L${result.lane}</span>
-                    <span class="timer-display text-cyan-300">${result.timeString} </span>
-                `;
-                resultsContainer.appendChild(resultDiv);
             let filteredParticipants = allParticipants.filter(p => {
                 const teamMatch = selectedTeam === 'all' || p.team === selectedTeam;
                 const genderMatch = selectedGender === 'all' || p.gender === selectedGender;
@@ -329,75 +156,102 @@
                 const ageMatch = (!minAge || p.age >= minAge) && (!maxAge || p.age <= maxAge);
                 return teamMatch && genderMatch && eventMatch && ageMatch;
             });
-        }
 
-        // Start/Pause the stopwatch
-        function startPause() {
-            if (!running) {
-                startTime = new Date().getTime();
-                tInterval = setInterval(updateDisplay, 10);
-                running = true;
-                paused = false;
-                startPauseBtn.textContent = 'Pause';
-                startPauseBtn.classList.replace('bg-green-500', 'bg-yellow-500');
-                startPauseBtn.classList.replace('hover:bg-green-600', 'hover:bg-yellow-600');
-            } else if (!paused) {
-                clearInterval(tInterval);
-                timeOffset += new Date().getTime() - startTime;
-                paused = true;
-                startPauseBtn.textContent = 'Resume';
-                startPauseBtn.classList.replace('bg-yellow-500', 'bg-blue-500');
-                startPauseBtn.classList.replace('hover:bg-yellow-600', 'hover:bg-blue-600');
-            if (sortOrder !== 'none' && selectedEvent !== 'all') {
-                if (sortOrder === 'asc') {
-                    filteredParticipants.sort((a, b) => parseTime(getEventTime(a, selectedEvent)) - parseTime(getEventTime(b, selectedEvent)));
-                } else if (sortOrder === 'desc') {
-                    filteredParticipants.sort((a, b) => parseTime(getEventTime(b, selectedEvent)) - parseTime(getEventTime(a, selectedEvent)));
-                }
+            const useSpecialSeeding = selectedEvent !== 'all';
+
+            // Sort by time first if an event is selected
+            if (useSpecialSeeding) {
+                // Ascending sort puts fastest times first. Then reverse for slowest-to-fastest heats.
+                filteredParticipants.sort((a, b) => parseTime(getEventTime(a, selectedEvent)) - parseTime(getEventTime(b, selectedEvent))).reverse();
             } else {
-                startTime = new Date().getTime();
-                tInterval = setInterval(updateDisplay, 10);
-                paused = false;
-                startPauseBtn.textContent = 'Pause';
-                startPauseBtn.classList.replace('bg-blue-500', 'bg-yellow-500');
-                startPauseBtn.classList.replace('hover:bg-blue-600', 'hover:bg-yellow-600');
+                 // Default sort by name
                  filteredParticipants.sort((a, b) => a.name.localeCompare(b.name));
             }
-        }
 
-        // Reset the stopwatch and all data
-        function reset() {
-            clearInterval(tInterval);
-            running = false;
-            paused = false;
-            difference = 0;
-            timeOffset = 0;
-            results = [];
-            stopwatchDisplay.textContent = '00:00.00';
-            startPauseBtn.textContent = 'Start';
-            startPauseBtn.className = 'btn w-28 md:w-40 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 sm:px-6 rounded-lg text-base sm:text-lg';
-            
-            resultsContainer.innerHTML = '';
-            
-            // Reset all visible lanes
-            const allLaneButtons = lanesContainer.querySelectorAll('button[id^="laneBtn"]');
-            allLaneButtons.forEach(button => {
-                const laneNumber = parseInt(button.id.replace('laneBtn', ''));
-                document.getElementById(`laneTime${laneNumber}`).textContent = '00:00.00';
-                button.disabled = false;
-                button.classList.remove('bg-gray-500', 'hover:bg-gray-500');
-                button.classList.add('bg-indigo-500', 'hover:bg-indigo-600');
             resultsBody.innerHTML = '';
             if (filteredParticipants.length === 0) {
                  resultsBody.innerHTML = `<tr><td colspan="5" class="text-center p-4 text-gray-500">No participants match filters.</td></tr>`;
+                 return;
             }
 
-            filteredParticipants.forEach((p, index) => {
-                const laneNumber = (index % lanesPerHeat) + startLane;
-                const seedTime = getEventTime(p, selectedEvent) || '---';
+            let displayData = [];
+
+            if (useSpecialSeeding) {
+                const laneSeedOrder = [4, 5, 3, 6, 2, 7, 1, 8, 0, 9];
+                const lanesPerHeat = laneSeedOrder.length;
+
+                // Process participants in chunks corresponding to heats
+                for (let i = 0; i < filteredParticipants.length; i += lanesPerHeat) {
+                    // Get the swimmers for the current heat
+                    let heatChunk = filteredParticipants.slice(i, i + lanesPerHeat);
+                    const heatNumber = Math.floor(i / lanesPerHeat) + 1;
+
+                    // The overall list is already sorted slowest to fastest.
+                    // To seed within the heat (fastest gets lane 4), we need to sort this specific chunk.
+                    // The current `heatChunk` is already sorted slowest to fastest relative to its members.
+                    // So we reverse it to get fastest to slowest for seeding.
+                    heatChunk.reverse();
+
+                    // Assign lanes to swimmers within this heat based on their rank in the heat
+                    const heatDisplayData = heatChunk.map((participant, indexInHeat) => {
+                        return {
+                            ...participant,
+                            displayHeat: heatNumber,
+                            displayLane: laneSeedOrder[indexInHeat],
+                        };
+                    });
+
+                    // Now, sort this heat by lane number for correct display order
+                    heatDisplayData.sort((a, b) => a.displayLane - b.displayLane);
+
+                    // Add the correctly ordered heat to the final display list
+                    displayData.push(...heatDisplayData);
+                }
+
+            } else {
+                // Handle standard sequential lane assignment
+                let startLane = parseInt(document.getElementById(`startLaneFilter-${blockId}`).value, 10);
+                if (isNaN(startLane)) startLane = 0;
+                let endLane = parseInt(document.getElementById(`endLaneFilter-${blockId}`).value, 10);
+                if (isNaN(endLane)) endLane = 9;
+                if (endLane < startLane) endLane = startLane;
+                const lanesPerHeat = (endLane - startLane) + 1;
+
+                filteredParticipants.forEach((participant, index) => {
+                    displayData.push({
+                        ...participant,
+                        displayHeat: Math.floor(index / lanesPerHeat) + 1,
+                        displayLane: (index % lanesPerHeat) + startLane,
+                    });
+                });
+            }
+
+            // Render the final sorted data
+            let lastHeatRendered = 0;
+            displayData.forEach(p => {
+                if (p.displayHeat > lastHeatRendered) {
+                    const heatHeaderRow = `
+                        <tr class="bg-gray-200 font-semibold">
+                            <td colspan="5" class="px-6 py-2 text-gray-800">Heat ${p.displayHeat}</td>
+                        </tr>
+                    `;
+                    resultsBody.innerHTML += heatHeaderRow;
+                    lastHeatRendered = p.displayHeat;
+                }
+
+                const rawSeedTime = getEventTime(p, selectedEvent);
+                let seedTime;
+                if (rawSeedTime === null) {
+                    seedTime = '---'; // No event selected or swimmer not in event
+                } else if (parseTime(rawSeedTime) === Infinity) {
+                    seedTime = 'NT'; // No time or zero time
+                } else {
+                    seedTime = rawSeedTime; // Valid time
+                }
+
                 const row = `
                     <tr class="hover:bg-gray-50 transition-colors duration-200">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">${laneNumber}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">${p.displayLane}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${p.name}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.team}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.age}</td>
@@ -405,11 +259,6 @@
                     </tr>
                 `;
                 resultsBody.innerHTML += row;
-
-                if ((index + 1) % lanesPerHeat === 0 && index < filteredParticipants.length - 1) {
-                    const breakRow = `<tr class="bg-blue-100"><td colspan="5" class="px-6 py-1 text-center text-xs font-semibold text-blue-800 uppercase">Next Heat</td></tr>`;
-                    resultsBody.innerHTML += breakRow;
-                }
             });
         }
         
@@ -427,35 +276,17 @@
             }
         }
 
-        // Record time for a specific lane
-        function recordLaneTime(laneNumber) {
-            if (running && !paused) {
-                const formattedTime = formatTime(difference);
-                document.getElementById(`laneTime${laneNumber}`).textContent = formattedTime;
-
-                const laneButton = document.getElementById(`laneBtn${laneNumber}`);
-                laneButton.disabled = true;
-                laneButton.classList.replace('bg-indigo-500', 'bg-gray-500');
-                laneButton.classList.replace('hover:bg-indigo-600', 'hover:bg-gray-500');
         function populateFiltersForBlock(blockId) {
-            const teams = [...new Set(allParticipants.map(p => p.team))].sort();
+            // Remove alphabetical sort for teams
+            const teams = [...new Set(allParticipants.map(p => p.team))];
             const genders = [...new Set(allParticipants.map(p => p.gender).filter(g => g))].sort();
             const events = [...new Set(allParticipants.flatMap(p => (p.events && Array.isArray(p.events)) ? p.events.map(e => e.event) : []))].sort();
 
-                results.push({ lane: laneNumber, time: difference, timeString: formattedTime });
-                updateResultsDisplay();
-            }
             populateSelectFilter(document.getElementById(`teamFilter-${blockId}`), teams, 'All Teams');
             populateSelectFilter(document.getElementById(`genderFilter-${blockId}`), genders, 'All Genders');
             populateSelectFilter(document.getElementById(`eventFilter-${blockId}`), events, 'All Events');
         }
 
-        // Initial setup on page load
-        function initializeApp() {
-            lanesContainer.innerHTML = '';
-            const initialLaneCount = 8; // Reduced initial lanes for better mobile view
-            for(let i = 0; i < initialLaneCount; i++) {
-                addLane();
         // --- Main Execution ---
         async function main() {
             try {
@@ -495,22 +326,12 @@
                 console.error("Error during setup:", error);
                 statusMessage.innerHTML = `<p class="text-red-500">Error loading data: ${error.message}. Make sure your security rules are set to allow reads.</p>`;
             }
-            updateLaneButtonsState();
         }
 
-        // Event Listeners
-        startPauseBtn.addEventListener('click', startPause);
-        resetBtn.addEventListener('click', reset);
-        addLaneBtn.addEventListener('click', addLane);
-        removeLaneBtn.addEventListener('click', removeLane);
-        toggleLaneZeroBtn.addEventListener('click', toggleLaneZero);
-
-        window.onload = initializeApp;
         document.getElementById('add-container-btn').addEventListener('click', addFilterBlock);
         document.getElementById('remove-container-btn').addEventListener('click', removeFilterBlock);
 
         main();
     </script>
-
 </body>
 </html>
