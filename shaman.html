@@ -80,7 +80,7 @@
                             <div class="lg:col-span-1"><label for="genderFilter-${blockId}" class="block text-sm font-medium text-gray-700">Gender</label><select id="genderFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Genders</option></select></div>
                             <div class="lg:col-span-1"><label for="eventFilter-${blockId}" class="block text-sm font-medium text-gray-700">Event</label><select id="eventFilter-${blockId}" class="filter-input mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"><option value="all">All Events</option></select></div>
                             <div class="lg:col-span-1"><label class="block text-sm font-medium text-gray-700">Age Range</label><div class="flex items-center space-x-2 mt-1"><input type="number" id="ageMinFilter-${blockId}" placeholder="Min" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><span class="text-gray-500">-</span><input type="number" id="ageMaxFilter-${blockId}" placeholder="Max" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div></div>
-                            <div class="lg:col-span-1"><label class="block text-sm font-medium text-gray-700">Lane Range (Sequential Sort)</label><div class="flex items-center space-x-2 mt-1"><input type="number" id="startLaneFilter-${blockId}" value="1" placeholder="Start" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><span class="text-gray-500">-</span><input type="number" id="endLaneFilter-${blockId}" value="4" placeholder="End" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div></div>
+                            <div class="lg:col-span-1"><label class="block text-sm font-medium text-gray-700">Lane Range (Sequential Sort)</label><div class="flex items-center space-x-2 mt-1"><input type="number" id="startLaneFilter-${blockId}" value="0" placeholder="Start" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><span class="text-gray-500">-</span><input type="number" id="endLaneFilter-${blockId}" value="9" placeholder="End" class="filter-input block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div></div>
                             <div class="col-span-full"><button id="resetFilters-${blockId}" class="w-full sm:w-auto sm:float-right bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-md transition">Reset Filters</button></div>
                         </div>
                     </div>
@@ -113,8 +113,8 @@
                 block.querySelectorAll('.filter-input').forEach(input => {
                     if (input.tagName === 'SELECT') input.value = 'all';
                     if (input.tagName === 'INPUT' && !input.id.includes('Lane')) input.value = '';
-                    if (input.id.includes('startLaneFilter')) input.value = '1';
-                    if (input.id.includes('endLaneFilter')) input.value = '4';
+                    if (input.id.includes('startLaneFilter')) input.value = '0';
+                    if (input.id.includes('endLaneFilter')) input.value = '9';
                 });
                 renderParticipants(blockId);
             });
@@ -123,13 +123,16 @@
         // --- Core Logic (now modular) ---
 
         function parseTime(timeString) {
-            if (!timeString || typeof timeString !== 'string') return Infinity;
+            if (!timeString || typeof timeString !== 'string' || timeString.toUpperCase() === 'NT') return Infinity;
             const parts = timeString.match(/(\d+):(\d+)\.?(\d+)?/);
             if (!parts) return Infinity;
             const minutes = parseInt(parts[1], 10) * 60;
             const seconds = parseInt(parts[2], 10);
             const milliseconds = parts[3] ? parseInt(parts[3].padEnd(2, '0'), 10) / 100 : 0;
-            return minutes + seconds + milliseconds;
+            const totalTime = minutes + seconds + milliseconds;
+            // If total time is 0, treat it as the slowest (Infinity)
+            if (totalTime === 0) return Infinity;
+            return totalTime;
         }
 
         function getEventTime(participant, eventName) {
@@ -208,9 +211,9 @@
             } else {
                 // Handle standard sequential lane assignment
                 let startLane = parseInt(document.getElementById(`startLaneFilter-${blockId}`).value, 10);
-                if (isNaN(startLane)) startLane = 1;
+                if (isNaN(startLane)) startLane = 0;
                 let endLane = parseInt(document.getElementById(`endLaneFilter-${blockId}`).value, 10);
-                if (isNaN(endLane)) endLane = startLane + 3;
+                if (isNaN(endLane)) endLane = 9;
                 if (endLane < startLane) endLane = startLane;
                 const lanesPerHeat = (endLane - startLane) + 1;
 
@@ -236,7 +239,16 @@
                     lastHeatRendered = p.displayHeat;
                 }
 
-                const seedTime = getEventTime(p, selectedEvent) || '---';
+                const rawSeedTime = getEventTime(p, selectedEvent);
+                let seedTime;
+                if (rawSeedTime === null) {
+                    seedTime = '---'; // No event selected or swimmer not in event
+                } else if (parseTime(rawSeedTime) === Infinity) {
+                    seedTime = 'NT'; // No time or zero time
+                } else {
+                    seedTime = rawSeedTime; // Valid time
+                }
+
                 const row = `
                     <tr class="hover:bg-gray-50 transition-colors duration-200">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">${p.displayLane}</td>
@@ -265,7 +277,8 @@
         }
 
         function populateFiltersForBlock(blockId) {
-            const teams = [...new Set(allParticipants.map(p => p.team))].sort();
+            // Remove alphabetical sort for teams
+            const teams = [...new Set(allParticipants.map(p => p.team))];
             const genders = [...new Set(allParticipants.map(p => p.gender).filter(g => g))].sort();
             const events = [...new Set(allParticipants.flatMap(p => (p.events && Array.isArray(p.events)) ? p.events.map(e => e.event) : []))].sort();
 
