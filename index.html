@@ -1,283 +1,278 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Race Participant Entry Form</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Inter', sans-serif; }
-    .form-input { transition: all 0.3s ease-in-out; }
-    .form-input:focus { box-shadow: 0 0 0 2px #3b82f6; border-color: #3b82f6; }
-    .btn-primary { transition: background-color 0.3s, transform 0.2s; }
-    .btn-primary:hover { background-color: #1d4ed8; }
-    .btn-primary:active { transform: scale(0.98); }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Race Participant Entry Form</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .form-input { transition: all 0.3s ease-in-out; }
+    .form-input:focus { box-shadow: 0 0 0 2px #3b82f6; border-color: #3b82f6; }
+    .btn-primary { transition: background-color 0.3s, transform 0.2s; }
+    .btn-primary:hover { background-color: #1d4ed8; }
+    .btn-primary:active { transform: scale(0.98); }
+  </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-  <div class="w-full max-w-4xl p-8 space-y-6 bg-white rounded-xl shadow-lg">
-    <div class="text-center">
-      <h1 class="text-3xl font-bold text-gray-800">Participant Data Entry</h1>
-      <p class="mt-2 text-gray-600">Add multiple swimmers with their event times, then submit all to Firebase.</p>
-    </div>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen py-12">
+  <div class="w-full max-w-4xl p-8 space-y-6 bg-white rounded-xl shadow-lg mb-24">     <div class="text-center">
+      <h1 class="text-3xl font-bold text-gray-800">Participant Data Entry</h1>
+      <p class="mt-2 text-gray-600">Add multiple swimmers with their event times, then submit all to Firebase.</p>
+    </div>
 
-    <!-- Form -->
-    <form id="participantForm" class="space-y-6">
-      <div>
-        <label for="name" class="text-sm font-medium text-gray-700">Full Name</label>
-        <input type="text" id="name" name="name" required class="form-input mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-      </div>
-      <div>
-        <label for="team" class="text-sm font-medium text-gray-700">Team</label>
-        <input type="text" id="team" name="team" required class="form-input mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-      </div>
-      <div>
-        <span class="text-sm font-medium text-gray-700">Gender</span>
-        <div class="mt-2 flex items-center gap-6">
-          <label class="inline-flex items-center">
-            <input type="radio" name="gender" value="Male" class="form-radio text-blue-600">
-            <span class="ml-2 text-gray-700">Male</span>
-          </label>
-          <label class="inline-flex items-center">
-            <input type="radio" name="gender" value="Female" class="form-radio text-blue-600">
-            <span class="ml-2 text-gray-700">Female</span>
-          </label>
-        </div>
-      </div>
-      <div>
-        <label for="age" class="text-sm font-medium text-gray-700">Age</label>
-        <input type="number" id="age" name="age" required class="form-input mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-      </div>
+        <form id="participantForm" class="space-y-6">
+      <div>
+        <label for="name" class="text-sm font-medium text-gray-700">Full Name</label>
+        <input type="text" id="name" name="name" required class="form-input mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+      </div>
+      <div>
+        <label for="team" class="text-sm font-medium text-gray-700">Team</label>
+        <input type="text" id="team" name="team" required class="form-input mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+      </div>
+      <div>
+        <span class="text-sm font-medium text-gray-700">Gender</span>
+        <div class="mt-2 flex items-center gap-6">
+          <label class="inline-flex items-center">
+            <input type="radio" name="gender" value="Male" class="form-radio text-blue-600">
+            <span class="ml-2 text-gray-700">Male</span>
+          </label>
+          <label class="inline-flex items-center">
+            <input type="radio" name="gender" value="Female" class="form-radio text-blue-600">
+            <span class="ml-2 text-gray-700">Female</span>
+          </label>
+        </div>
+      </div>
+      <div>
+        <label for="age" class="text-sm font-medium text-gray-700">Age</label>
+        <input type="number" id="age" name="age" required class="form-input mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+      </div>
 
-      <!-- Events -->
-      <div>
-        <span class="text-sm font-medium text-gray-700">Select Events (max 5)</span>
-        <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-          <label><input type="checkbox" class="event-checkbox" value="50m Butterfly"> 50m Butterfly</label>
-          <label><input type="checkbox" class="event-checkbox" value="50m Freestyle"> 50m Freestyle</label>
-          <label><input type="checkbox" class="event-checkbox" value="50m Backstroke"> 50m Backstroke</label>
-          <label><input type="checkbox" class="event-checkbox" value="50m Breaststroke"> 50m Breaststroke</label>
-          <label><input type="checkbox" class="event-checkbox" value="100m Butterfly"> 100m Butterfly</label>
-          <label><input type="checkbox" class="event-checkbox" value="100m Freestyle"> 100m Freestyle</label>
-          <label><input type="checkbox" class="event-checkbox" value="100m Backstroke"> 100m Backstroke</label>
-          <label><input type="checkbox" class="event-checkbox" value="100m Breaststroke"> 100m Breaststroke</label>
-        </div>
-      </div>
+            <div>
+        <span class="text-sm font-medium text-gray-700">Select Events (max 5)</span>
+        <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          <label><input type="checkbox" class="event-checkbox" value="50m Butterfly"> 50m Butterfly</label>
+          <label><input type="checkbox" class="event-checkbox" value="50m Freestyle"> 50m Freestyle</label>
+          <label><input type="checkbox" class="event-checkbox" value="50m Backstroke"> 50m Backstroke</label>
+          <label><input type="checkbox" class="event-checkbox" value="50m Breaststroke"> 50m Breaststroke</label>
+          <label><input type="checkbox" class="event-checkbox" value="100m Butterfly"> 100m Butterfly</label>
+          <label><input type="checkbox" class="event-checkbox" value="100m Freestyle"> 100m Freestyle</label>
+          <label><input type="checkbox" class="event-checkbox" value="100m Backstroke"> 100m Backstroke</label>
+          <label><input type="checkbox" class="event-checkbox" value="100m Breaststroke"> 100m Breaststroke</label>
+        </div>
+      </div>
 
-      <!-- Times for events -->
-      <div id="eventTimesContainer" class="space-y-3 mt-4"></div>
+            <div id="eventTimesContainer" class="space-y-3 mt-4"></div>
 
-      <div class="flex flex-wrap gap-4">
-        <button type="button" id="addParticipant" class="btn-primary flex-1 py-3 px-4 rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-          Add Swimmer
-        </button>
-        <button type="button" id="submitAll" class="flex-1 py-3 px-4 rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-          Submit All
-        </button>
-        <button type="button" id="generateRandom" class="flex-1 py-3 px-4 rounded-lg shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
-          Generate 10 Random Swimmers
-        </button>
-      </div>
-    </form>
+      <div class="flex flex-wrap gap-4">
+        <button type="button" id="addParticipant" class="btn-primary flex-1 py-3 px-4 rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          Add Swimmer
+        </button>
+        <button type="button" id="generateRandom" class="flex-1 py-3 px-4 rounded-lg shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+          Generate 10 Random Swimmers
+        </button>
+      </div>
+    </form>
 
-    <!-- Table -->
-    <div>
-      <h2 class="text-xl font-bold text-gray-800 mt-8 mb-4">Swimmers List</h2>
-      <div class="overflow-x-auto">
-        <table class="min-w-full bg-white border border-gray-300 rounded-lg overflow-hidden">
-          <thead class="bg-gray-100 border-b border-gray-300">
-            <tr>
-              <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">#</th>
-              <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Name</th>
-              <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Team</th>
-              <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Gender</th>
-              <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Age</th>
-              <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Events & Times</th>
-              <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="participantsTableBody" class="divide-y divide-gray-200"></tbody>
-        </table>
-      </div>
-    </div>
+        <div>
+      <h2 class="text-xl font-bold text-gray-800 mt-8 mb-4">Swimmers List</h2>
+      <div class="overflow-x-auto">
+        <table class="min-w-full bg-white border border-gray-300 rounded-lg overflow-hidden">
+          <thead class="bg-gray-100 border-b border-gray-300">
+            <tr>
+              <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">#</th>
+              <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Name</th>
+              <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Team</th>
+              <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Gender</th>
+              <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Age</th>
+              <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Events & Times</th>
+              <th class="py-2 px-4 text-left text-sm font-medium text-gray-600">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="participantsTableBody" class="divide-y divide-gray-200"></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="statusMessage" class="mt-6 text-center text-sm"></div>
+  </div>
 
-    <div id="statusMessage" class="mt-6 text-center text-sm"></div>
-  </div>
+ <button type="button" id="submitAll" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-sm py-3 px-4 rounded-lg shadow-lg text-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-transform hover:scale-105 active:scale-100">
+    Submit All to Firebase
+  </button>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBZk__e3uaXa676oO4J5i9fxwSn_jP2Nq4",
-      authDomain: "swimresultsdata.firebaseapp.com",
-      projectId: "swimresultsdata",
-      storageBucket: "swimresultsdata.appspot.com",
-      messagingSenderId: "816372780565",
-      appId: "1:816372780565:web:76ea6afd9f40f33854881c"
-    };
+    const firebaseConfig = {
+      apiKey: "AIzaSyBZk__e3uaXa676oO4J5i9fxwSn_jP2Nq4",
+      authDomain: "swimresultsdata.firebaseapp.com",
+      projectId: "swimresultsdata",
+      storageBucket: "swimresultsdata.appspot.com",
+      messagingSenderId: "816372780565",
+      appId: "1:816372780565:web:76ea6afd9f40f33854881c"
+    };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-    window.onload = () => signInAnonymously(auth);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    window.onload = () => signInAnonymously(auth);
 
-    const participantsList = [];
-    const addBtn = document.getElementById('addParticipant');
-    const submitAllBtn = document.getElementById('submitAll');
-    const randomBtn = document.getElementById('generateRandom');
-    const statusMessage = document.getElementById('statusMessage');
-    const tableBody = document.getElementById('participantsTableBody');
-    const eventTimesContainer = document.getElementById('eventTimesContainer');
-    const eventCheckboxes = document.querySelectorAll('.event-checkbox');
+    const participantsList = [];
+    const addBtn = document.getElementById('addParticipant');
+    const submitAllBtn = document.getElementById('submitAll');
+    const randomBtn = document.getElementById('generateRandom');
+    const statusMessage = document.getElementById('statusMessage');
+    const tableBody = document.getElementById('participantsTableBody');
+    const eventTimesContainer = document.getElementById('eventTimesContainer');
+    const eventCheckboxes = document.querySelectorAll('.event-checkbox');
 
-    const eventNames = [
-      "50m Butterfly","50m Freestyle","50m Backstroke","50m Breaststroke",
-      "100m Butterfly","100m Freestyle","100m Backstroke","100m Breaststroke"
-    ];
+    const eventNames = [
+      "50m Butterfly","50m Freestyle","50m Backstroke","50m Breaststroke",
+      "100m Butterfly","100m Freestyle","100m Backstroke","100m Breaststroke"
+    ];
 
-    // Limit to 5 events & show time inputs
-    eventCheckboxes.forEach(cb => {
-      cb.addEventListener('change', () => {
-        const checked = document.querySelectorAll('.event-checkbox:checked');
-        if (checked.length > 5) {
-          cb.checked = false;
-          alert('You can only select up to 5 events.');
-        }
-        renderEventTimeInputs();
-      });
-    });
+    // Limit to 5 events & show time inputs
+    eventCheckboxes.forEach(cb => {
+      cb.addEventListener('change', () => {
+        const checked = document.querySelectorAll('.event-checkbox:checked');
+        if (checked.length > 5) {
+          cb.checked = false;
+          alert('You can only select up to 5 events.');
+        }
+        renderEventTimeInputs();
+      });
+    });
 
-    function renderEventTimeInputs() {
-      eventTimesContainer.innerHTML = '';
-      document.querySelectorAll('.event-checkbox:checked').forEach(cb => {
-        const div = document.createElement('div');
-        div.innerHTML = `
-          <label class="block text-sm font-medium text-gray-700">${cb.value} Time</label>
-          <input type="text" data-event="${cb.value}" value="00:00"
-            class="event-time-input form-input mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-        `;
-        eventTimesContainer.appendChild(div);
-      });
-    }
+    function renderEventTimeInputs() {
+      eventTimesContainer.innerHTML = '';
+      document.querySelectorAll('.event-checkbox:checked').forEach(cb => {
+        const div = document.createElement('div');
+        div.innerHTML = `
+          <label class="block text-sm font-medium text-gray-700">${cb.value} Time</label>
+          <input type="text" data-event="${cb.value}" value="00:00"
+            class="event-time-input form-input mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+        `;
+        eventTimesContainer.appendChild(div);
+      });
+    }
 
-    addBtn.addEventListener('click', () => {
-      addSwimmerFromForm();
-    });
+    addBtn.addEventListener('click', () => {
+      addSwimmerFromForm();
+    });
 
-    function addSwimmerFromForm() {
-      const name = document.getElementById('name').value.trim();
-      const team = document.getElementById('team').value.trim();
-      const age = document.getElementById('age').value;
-      const genderInput = document.querySelector('input[name="gender"]:checked');
-      const gender = genderInput ? genderInput.value : null;
-      const events = Array.from(document.querySelectorAll('.event-checkbox:checked')).map(cb => {
-        const timeInput = document.querySelector(`.event-time-input[data-event="${cb.value}"]`);
-        return { event: cb.value, time: timeInput.value.trim() };
-      });
+    function addSwimmerFromForm() {
+      const name = document.getElementById('name').value.trim();
+      const team = document.getElementById('team').value.trim();
+      const age = document.getElementById('age').value;
+      const genderInput = document.querySelector('input[name="gender"]:checked');
+      const gender = genderInput ? genderInput.value : null;
+      const events = Array.from(document.querySelectorAll('.event-checkbox:checked')).map(cb => {
+        const timeInput = document.querySelector(`.event-time-input[data-event="${cb.value}"]`);
+        return { event: cb.value, time: timeInput.value.trim() };
+      });
 
-      if (!name || !team || !age || !gender || events.length === 0 || events.some(e => !e.time)) {
-        statusMessage.textContent = 'Please fill all fields and provide times for selected events.';
-        statusMessage.className = 'text-red-600';
-        return;
-      }
+      if (!name || !team || !age || !gender || events.length === 0 || events.some(e => !e.time)) {
+        statusMessage.textContent = 'Please fill all fields and provide times for selected events.';
+        statusMessage.className = 'text-red-600';
+        return;
+      }
 
-      participantsList.push({ name, team, gender, age: Number(age), events });
-      renderTable();
-      document.getElementById('participantForm').reset();
-      eventTimesContainer.innerHTML = '';
-      statusMessage.textContent = 'Swimmer added! Add more or click Submit All.';
-      statusMessage.className = 'text-green-600';
-    }
+      participantsList.push({ name, team, gender, age: Number(age), events });
+      renderTable();
+      document.getElementById('participantForm').reset();
+      eventTimesContainer.innerHTML = '';
+      statusMessage.textContent = 'Swimmer added! Add more or click Submit All.';
+      statusMessage.className = 'text-green-600';
+    }
 
-    function renderTable() {
-      tableBody.innerHTML = '';
-      participantsList.forEach((p, idx) => {
-        const eventText = p.events.map(e => `${e.event}: ${e.time}`).join('<br>');
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="py-2 px-4">${idx + 1}</td>
-          <td class="py-2 px-4">${p.name}</td>
-          <td class="py-2 px-4">${p.team}</td>
-          <td class="py-2 px-4">${p.gender}</td>
-          <td class="py-2 px-4">${p.age}</td>
-          <td class="py-2 px-4">${eventText}</td>
-          <td class="py-2 px-4">
-            <button data-index="${idx}" class="remove-btn text-red-600 hover:text-red-800 underline">Remove</button>
-          </td>
-        `;
-        tableBody.appendChild(tr);
-      });
+    function renderTable() {
+      tableBody.innerHTML = '';
+      participantsList.forEach((p, idx) => {
+        const eventText = p.events.map(e => `${e.event}: ${e.time}`).join('<br>');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="py-2 px-4">${idx + 1}</td>
+          <td class="py-2 px-4">${p.name}</td>
+          <td class="py-2 px-4">${p.team}</td>
+          <td class="py-2 px-4">${p.gender}</td>
+          <td class="py-2 px-4">${p.age}</td>
+          <td class="py-2 px-4">${eventText}</td>
+          <td class="py-2 px-4">
+            <button data-index="${idx}" class="remove-btn text-red-600 hover:text-red-800 underline">Remove</button>
+          </td>
+        `;
+        tableBody.appendChild(tr);
+      });
 
-      document.querySelectorAll('.remove-btn').forEach(btn => {
-        btn.addEventListener('click', e => {
-          const index = Number(e.target.getAttribute('data-index'));
-          participantsList.splice(index, 1);
-          renderTable();
-          statusMessage.textContent = 'Swimmer removed.';
-          statusMessage.className = 'text-yellow-600';
-        });
-      });
-    }
+      document.querySelectorAll('.remove-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+          const index = Number(e.target.getAttribute('data-index'));
+          participantsList.splice(index, 1);
+          renderTable();
+          statusMessage.textContent = 'Swimmer removed.';
+          statusMessage.className = 'text-yellow-600';
+        });
+      });
+    }
 
-    // Generate Random Swimmers
-    randomBtn.addEventListener('click', () => {
-      for (let i = 0; i < 10; i++) {
-        participantsList.push(generateRandomSwimmer());
-      }
-      renderTable();
-      statusMessage.textContent = '10 random swimmers generated.';
-      statusMessage.className = 'text-purple-600';
-    });
+    // Generate Random Swimmers
+    randomBtn.addEventListener('click', () => {
+      for (let i = 0; i < 10; i++) {
+        participantsList.push(generateRandomSwimmer());
+      }
+      renderTable();
+      statusMessage.textContent = '10 random swimmers generated.';
+      statusMessage.className = 'text-purple-600';
+    });
 
-    function generateRandomSwimmer() {
-      const randomNames = ["Alex", "Jamie", "Taylor", "Chris", "Jordan", "Sam", "Morgan", "Charlie", "Avery", "Casey"];
-      const randomTeams = ["Sharks", "Dolphins", "Whales", "Tigers", "Rays"];
-      const name = randomNames[Math.floor(Math.random() * randomNames.length)] + " " + (Math.floor(Math.random() * 90) + 10);
-      const team = randomTeams[Math.floor(Math.random() * randomTeams.length)];
-      const gender = Math.random() > 0.5 ? "Male" : "Female";
-      const age = Math.floor(Math.random() * 10) + 8; // 8-18
+    function generateRandomSwimmer() {
+      const randomNames = ["Alex", "Jamie", "Taylor", "Chris", "Jordan", "Sam", "Morgan", "Charlie", "Avery", "Casey"];
+      const randomTeams = ["Sharks", "Dolphins", "Whales", "Tigers", "Rays"];
+      const name = randomNames[Math.floor(Math.random() * randomNames.length)] + " " + (Math.floor(Math.random() * 90) + 10);
+      const team = randomTeams[Math.floor(Math.random() * randomTeams.length)];
+      const gender = Math.random() > 0.5 ? "Male" : "Female";
+      const age = Math.floor(Math.random() * 10) + 8; // 8-18
 
-      // Always pick 5 unique events
-      const selectedEvents = [...eventNames].sort(() => 0.5 - Math.random()).slice(0, 5);
-      const events = selectedEvents.map(ev => ({
-        event: ev,
-        time: randomTime()
-      }));
-      return { name, team, gender, age, events };
-    }
+      // Always pick 5 unique events
+      const selectedEvents = [...eventNames].sort(() => 0.5 - Math.random()).slice(0, 5);
+      const events = selectedEvents.map(ev => ({
+        event: ev,
+        time: randomTime()
+      }));
+      return { name, team, gender, age, events };
+    }
 
-    function randomTime() {
-      const minutes = "00";
-      const seconds = String(Math.floor(Math.random() * 60)).padStart(2, "0");
-      return `${minutes}:${seconds}`;
-    }
+    function randomTime() {
+      const minutes = "00";
+      const seconds = String(Math.floor(Math.random() * 60)).padStart(2, "0");
+      return `${minutes}:${seconds}`;
+    }
 
-    submitAllBtn.addEventListener('click', async () => {
-      if (participantsList.length === 0) {
-        statusMessage.textContent = 'No swimmers to submit.';
-        statusMessage.className = 'text-red-600';
-        return;
-      }
-      statusMessage.textContent = 'Saving all swimmers...';
-      statusMessage.className = 'text-blue-600';
+    submitAllBtn.addEventListener('click', async () => {
+      if (participantsList.length === 0) {
+        statusMessage.textContent = 'No swimmers to submit.';
+        statusMessage.className = 'text-red-600';
+        return;
+      }
+      statusMessage.textContent = 'Saving all swimmers...';
+      statusMessage.className = 'text-blue-600';
 
-      try {
-        for (const p of participantsList) {
-          await addDoc(collection(db, "participants"), { ...p, createdAt: new Date() });
-        }
-        participantsList.length = 0;
-        renderTable();
-        statusMessage.textContent = 'All swimmers saved successfully!';
-        statusMessage.className = 'text-green-600';
-      } catch (error) {
-        console.error("Error saving swimmers:", error);
-        statusMessage.textContent = `Error: ${error.message}`;
-        statusMessage.className = 'text-red-600';
-      }
-    });
-  </script>
+      try {
+        for (const p of participantsList) {
+          await addDoc(collection(db, "participants"), { ...p, createdAt: new Date() });
+        }
+        participantsList.length = 0;
+        renderTable();
+        statusMessage.textContent = 'All swimmers saved successfully!';
+        statusMessage.className = 'text-green-600';
+      } catch (error) {
+        console.error("Error saving swimmers:", error);
+        statusMessage.textContent = `Error: ${error.message}`;
+        statusMessage.className = 'text-red-600';
+      }
+    });
+  </script>
 </body>
 </html>
